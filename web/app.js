@@ -127,6 +127,7 @@ worker.onmessage = ({ data: msg }) => {
   permCache.clear();
   optionCache.clear();
   closePicker();
+  hideCard();
   viewBuf = new Uint32Array(data.rows);
   buildFilterRow();
   setBusy(false);
@@ -357,7 +358,10 @@ document.addEventListener('mousedown', (e) => {
   if (picker && !picker.el.contains(e.target) && !picker.anchor.contains(e.target)) closePicker();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closePicker();
+  if (e.key === 'Escape') {
+    closePicker();
+    hideCard();
+  }
 });
 
 // ---- filtering -----------------------------------------------------------------------------------
@@ -571,6 +575,7 @@ function renderRows() {
     const i = first + p;
     const r = view[i];
     row.hidden = false;
+    row.dataset.r = r;
     row.style.transform = `translateY(${scrolled + i * ROW_H - virtualTop}px)`;
     row.classList.toggle('odd', i % 2 === 1);
     const quality = data.dictionary[data.columns.quality[r]];
@@ -633,6 +638,7 @@ let scrollQueued = false;
 scroller.addEventListener('scroll', () => {
   if (scrollQueued) return;
   scrollQueued = true;
+  hideCard();
   requestAnimationFrame(() => {
     scrollQueued = false;
     renderRows();
@@ -643,6 +649,183 @@ window.addEventListener('resize', () => {
   renderRows();
   positionPicker();
 });
+
+// ---- hover cards ---------------------------------------------------------------------------------
+
+const HOVER_DELAY_MS = 350;
+const HOVER_KINDS = { 'col-monster': monsterCard, 'col-location': locationCard, 'col-item': itemCard };
+const RESISTANCES = ['Fire', 'Cold', 'Lightning', 'Poison', 'Magic', 'Physical'];
+const MAX_LISTED_MONSTERS = 12;
+
+const card = el('div', 'hovercard');
+card.hidden = true;
+card.setAttribute('role', 'tooltip');
+document.body.append(card);
+let hoverTimer = 0;
+let hoverCell = null;
+
+function hideCard() {
+  clearTimeout(hoverTimer);
+  hoverCell = null;
+  card.hidden = true;
+}
+
+spacer.addEventListener('mouseover', (e) => {
+  const cell = e.target.closest('.td');
+  if (cell === hoverCell) return;
+  hideCard();
+  const build = cell && HOVER_KINDS[[...cell.classList].find((c) => c in HOVER_KINDS)];
+  if (!build || !data || picker) return;
+  hoverCell = cell;
+  hoverTimer = setTimeout(() => {
+    const r = Number(cell.parentElement.dataset.r);
+    card.replaceChildren(...build(r));
+    card.hidden = false;
+    positionCard(cell);
+  }, HOVER_DELAY_MS);
+});
+spacer.addEventListener('mouseleave', hideCard);
+
+function positionCard(cell) {
+  const rect = cell.getBoundingClientRect();
+  const { offsetWidth: w, offsetHeight: h } = card;
+  const left = Math.max(8, Math.min(rect.left, window.innerWidth - w - 8));
+  // Below the cell, or above it when there's no room.
+  const below = rect.bottom + 6;
+  const top = below + h <= window.innerHeight - 8 ? below : Math.max(8, rect.top - h - 6);
+  card.style.left = `${left}px`;
+  card.style.top = `${top}px`;
+}
+
+const fmtNum = (n) => fmtInt.format(n);
+const span = (a, b) => (a === b ? fmtNum(a) : `${fmtNum(a)}–${fmtNum(b)}`);
+
+function cardHead(title, subtitle, cls) {
+  const head = el('div', 'hc-head');
+  head.append(el('div', `hc-title ${cls || ''}`, title));
+  if (subtitle) head.append(el('div', 'hc-sub', subtitle));
+  return head;
+}
+
+/** Label/value rows; entries with a null value are skipped. */
+function facts(pairs) {
+  const dl = el('dl', 'hc-facts');
+  for (const [label, value] of pairs) {
+    if (value == null || value === '') continue;
+    dl.append(el('dt', null, label), el('dd', null, String(value)));
+  }
+  return dl;
+}
+
+function section(title, ...children) {
+  const s = el('div', 'hc-section');
+  if (title) s.append(el('div', 'hc-label', title));
+  s.append(...children);
+  return s;
+}
+
+function rowContext(r) {
+  const { columns, dictionary } = data;
+  return {
+    difficulty: dictionary[columns.difficulty[r]],
+    type: dictionary[columns.monsterType[r]],
+    level: columns.level[r],
+    terrorized: (columns.flags[r] & 1) === 1,
+  };
+}
+
+function monsterCard(r) {
+  const m = data.details.monsters[data.columns.monsterRef[r]];
+  if (!m) return [el('div', 'hc-sub', 'No details available.')];
+  const { difficulty, type, level, terrorized } = rowContext(r);
+  const stats = m.stats[difficulty];
+  const out = [cardHead(m.name, [type, m.base, `${difficulty}${terrorized ? ', terrorized' : ''}`].filter(Boolean).join(' · '))];
+
+  const tags = el('div', 'hc-tags');
+  for (const [on, label] of [[m.boss, 'Boss'], [m.undead, 'Undead'], [m.demon, 'Demon']]) if (on) tags.append(el('span', 'hc-tag', label));
+  if (tags.childElementCount) out.push(tags);
+
+  if (stats) {
+    const base = data.details.monlvl[difficulty];
+    const hpBase = base.hp[level] ?? 0;
+    const xpBase = base.xp[level] ?? 0;
+    out.push(
+      facts([
+        ['Monster level', level],
+        ['Life', span(Math.floor((stats.hp[0] * hpBase) / 100), Math.floor((stats.hp[1] * hpBase) / 100))],
+        ['Experience', fmtNum(Math.floor((stats.xp * xpBase) / 100))],
+      ]),
+    );
+    out.push(el('div', 'hc-note', 'Life and experience: 1 player, before champion/unique bonuses.'));
+    const grid = el('div', 'hc-res');
+    stats.res.forEach((v, i) => {
+      const cell = el('div', `hc-res-cell${v >= 100 ? ' immune' : ''}`);
+      cell.append(el('span', null, RESISTANCES[i]), el('b', null, `${v}%`));
+      grid.append(cell);
+    });
+    out.push(section('Resistances', grid));
+  }
+  return out;
+}
+
+function locationCard(r) {
+  const a = data.details.areas[data.columns.areaRef[r]];
+  if (!a) return [el('div', 'hc-sub', 'No details available.')];
+  const { difficulty } = rowContext(r);
+  const packs = a.uniquePacks[difficulty];
+  const out = [
+    cardHead(a.name, `Act ${a.act} · ${difficulty}`),
+    facts([
+      ['Area level', a.levels[difficulty]],
+      ['Unique packs', packs && (packs[1] > 0 ? span(packs[0], packs[1]) : 'none')],
+    ]),
+  ];
+  if (a.superuniques.length) out.push(section('Super uniques', el('div', 'hc-list', a.superuniques.join(', '))));
+  const monsters = a.monsters[difficulty] || [];
+  if (monsters.length) {
+    const shown = monsters.slice(0, MAX_LISTED_MONSTERS).join(', ');
+    const more = monsters.length > MAX_LISTED_MONSTERS ? ` +${monsters.length - MAX_LISTED_MONSTERS} more` : '';
+    out.push(section('Monsters', el('div', 'hc-list', shown + more)));
+  }
+  return out;
+}
+
+function itemCard(r) {
+  const it = data.details.items[data.columns.itemRef[r]];
+  if (!it) return [el('div', 'hc-sub', 'No details available.')];
+  const kindClass = it.kind === 'unique' ? 'q-unique' : it.kind === 'set' ? 'q-set' : '';
+  const subtitle = it.kind === 'base' ? `${it.type} · ${it.tier}` : `${it.base} · ${it.type} · ${it.tier}`;
+  const pair = (p) => p && span(p[0], p[1]);
+  const out = [
+    cardHead(it.name, subtitle, kindClass),
+    facts([
+      ['Set', it.set],
+      ['Item level', it.qlvl],
+      ['Required level', it.reqLevel],
+      ['Defense', pair(it.defense)],
+      ['One-hand damage', pair(it.damage1h)],
+      ['Two-hand damage', pair(it.damage2h)],
+      ['Required strength', it.reqStr],
+      ['Required dexterity', it.reqDex],
+      ['Durability', it.durability],
+      ['Max sockets', it.sockets],
+    ]),
+  ];
+  if (it.kind !== 'base') {
+    out.push(el('div', 'hc-note', 'Base defense/damage shown; the item’s own bonuses are below.'));
+  }
+  if (it.props?.length) {
+    const list = el('ul', 'hc-props');
+    for (const line of it.props) list.append(el('li', null, line));
+    out.push(section(null, list));
+  }
+  if (it.setBonuses?.length) {
+    const list = el('ul', 'hc-props set');
+    for (const b of it.setBonuses) list.append(el('li', null, `${b.text} (${b.items} items)`));
+    out.push(section('Set bonuses', list));
+  }
+  return out;
+}
 
 // ---- toolbar -------------------------------------------------------------------------------------
 

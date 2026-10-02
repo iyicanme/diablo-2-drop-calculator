@@ -75,6 +75,7 @@ fn process_minions(
                 let instance = MonsterInstance {
                     display_name: display_name.clone(),
                     monster_class_id: minion.id.clone(),
+                    monster_key: minion.id.clone(),
                     monster_type: MonsterType::Minion,
                     area,
                     difficulty,
@@ -95,6 +96,7 @@ fn process_minions(
                 let instance = MonsterInstance {
                     display_name,
                     monster_class_id: minion.id.clone(),
+                    monster_key: minion.id.clone(),
                     monster_type: MonsterType::Minion,
                     area,
                     difficulty,
@@ -116,6 +118,8 @@ fn resist_yes(value: i32) -> bool {
 struct MonsterInstance<'a> {
     display_name: String,
     monster_class_id: String,
+    /// See `DropRow::monster_key`.
+    monster_key: String,
     monster_type: MonsterType,
     area: &'a Area,
     difficulty: Difficulty,
@@ -167,6 +171,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                     let instance = MonsterInstance {
                         display_name: display_name.clone(),
                         monster_class_id: monster_class.id.clone(),
+                        monster_key: monster_class.id.clone(),
                         monster_type,
                         area,
                         difficulty,
@@ -184,6 +189,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                             let t_instance = MonsterInstance {
                                 display_name: display_name.clone(),
                                 monster_class_id: monster_class.id.clone(),
+                                monster_key: monster_class.id.clone(),
                                 monster_type,
                                 area,
                                 difficulty,
@@ -219,6 +225,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
             let instance = MonsterInstance {
                 display_name: superunique.name.clone(),
                 monster_class_id: monster_class.id.clone(),
+                monster_key: format!("su:{}", superunique.id),
                 monster_type: MonsterType::SuperUnique,
                 area,
                 difficulty,
@@ -235,6 +242,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                 let t_instance = MonsterInstance {
                     display_name: superunique.name.clone(),
                     monster_class_id: monster_class.id.clone(),
+                    monster_key: format!("su:{}", superunique.id),
                     monster_type: MonsterType::SuperUnique,
                     area,
                     difficulty,
@@ -297,6 +305,10 @@ fn process_instance(
         item_tier: "",
         magic_quality: "",
         drop_chance: 0.0,
+        monster_key: instance.monster_key.clone(),
+        area_id: instance.area.id.clone(),
+        item_key: String::new(),
+        monster_level: instance.level,
     };
 
     for (base_code, (leaf_prob, ratios)) in resolved.iter() {
@@ -357,6 +369,7 @@ fn emit_named(
         }
         emit(DropRow {
             item_name: candidate.name.clone(),
+            item_key: format!("{}:{}", if quality_label == "Set" { "s" } else { "u" }, candidate.id),
             item_type: base_item.item_type_display.clone(),
             item_tier: base_item.tier.label(),
             magic_quality: quality_label,
@@ -379,6 +392,7 @@ fn push_generic(
     }
     emit(DropRow {
         item_name: base_name.to_string(),
+        item_key: format!("b:{}", base_item.code),
         item_type: base_item.item_type_display.clone(),
         item_tier: base_item.tier.label(),
         magic_quality: quality_label,
@@ -407,6 +421,10 @@ fn clone_base(base_row: &DropRow) -> DropRow {
         item_tier: base_row.item_tier,
         magic_quality: base_row.magic_quality,
         drop_chance: base_row.drop_chance,
+        monster_key: base_row.monster_key.clone(),
+        area_id: base_row.area_id.clone(),
+        item_key: base_row.item_key.clone(),
+        monster_level: base_row.monster_level,
     }
 }
 

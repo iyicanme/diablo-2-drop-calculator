@@ -20,6 +20,13 @@ pub struct DropRow {
     pub item_tier: &'static str,
     pub magic_quality: &'static str,
     pub drop_chance: f64,
+    // Not written to the CSV: references the web app uses to look up hover-card details.
+    /// Monster class id, or `su:<superunique id>`.
+    pub monster_key: String,
+    pub area_id: String,
+    /// `u:<unique id>`, `s:<set item id>` or `b:<base item code>`.
+    pub item_key: String,
+    pub monster_level: i32,
 }
 
 const HEADER: [&str; 19] = [

@@ -4,8 +4,10 @@
 //! A full run is millions of rows, so instead of shipping `DropRow`s the result is columnar:
 //! string fields become u16 indices into one shared dictionary (sent as a JSON array), the
 //! terrorized/immunity booleans are packed into one bitmask byte, and the drop chance stays f64.
+//! Hover-card references (monster / area / item) are u16 indices into a separate details JSON.
 
-use crate::data::GameData;
+use crate::data::{DisplayData, GameData};
+use crate::details;
 use crate::export::{self, Category, DropRow};
 use crate::pipeline;
 use std::collections::HashMap;
@@ -30,11 +32,35 @@ const FLAGS: usize = 10;
 const CATEGORY: usize = 11;
 const CHANCE: usize = 12;
 const DICTIONARY: usize = 13;
+const MONSTER_REF: usize = 14;
+const AREA_REF: usize = 15;
+const ITEM_REF: usize = 16;
+const LEVEL: usize = 17;
+const DETAILS: usize = 18;
+
+/// Distinct keys in first-seen order, with u16 indices.
+#[derive(Default)]
+struct Interner {
+    keys: Vec<String>,
+    lookup: HashMap<String, u16>,
+}
+
+impl Interner {
+    /// `None` once there are more than u16::MAX distinct keys.
+    fn intern(&mut self, s: &str) -> Option<u16> {
+        if let Some(&i) = self.lookup.get(s) {
+            return Some(i);
+        }
+        let i = u16::try_from(self.keys.len()).ok()?;
+        self.keys.push(s.to_string());
+        self.lookup.insert(s.to_string(), i);
+        Some(i)
+    }
+}
 
 #[derive(Default)]
 struct Output {
-    dictionary: Vec<String>,
-    lookup: HashMap<String, u16>,
+    dictionary: Interner,
     overflowed: bool,
     strings: [Vec<u16>; STRING_COLUMNS],
     act: Vec<u8>,
@@ -43,20 +69,19 @@ struct Output {
     category: Vec<u8>,
     chance: Vec<f64>,
     dictionary_json: String,
+    /// Monster keys, area ids and item keys referenced by the rows (see `DropRow`).
+    refs: [Interner; 3],
+    ref_columns: [Vec<u16>; 3],
+    level: Vec<u8>,
+    details_json: String,
 }
 
 impl Output {
     fn intern(&mut self, s: &str) -> u16 {
-        if let Some(&i) = self.lookup.get(s) {
-            return i;
-        }
-        let Ok(i) = u16::try_from(self.dictionary.len()) else {
+        self.dictionary.intern(s).unwrap_or_else(|| {
             self.overflowed = true;
-            return 0;
-        };
-        self.dictionary.push(s.to_string());
-        self.lookup.insert(s.to_string(), i);
-        i
+            0
+        })
     }
 
     fn push(&mut self, row: &DropRow) {
@@ -88,6 +113,14 @@ impl Output {
         self.act.push(row.act as u8);
         self.category.push(Category::of(row) as u8);
         self.chance.push(row.drop_chance);
+        for (i, key) in [&row.monster_key, &row.area_id, &row.item_key].into_iter().enumerate() {
+            let index = self.refs[i].intern(key).unwrap_or_else(|| {
+                self.overflowed = true;
+                0
+            });
+            self.ref_columns[i].push(index);
+        }
+        self.level.push(row.monster_level.clamp(0, 255) as u8);
     }
 
     fn column_bytes(&self, column: usize) -> &[u8] {
@@ -102,6 +135,11 @@ impl Output {
             CATEGORY => &self.category,
             CHANCE => bytes(&self.chance),
             DICTIONARY => self.dictionary_json.as_bytes(),
+            MONSTER_REF => bytes(&self.ref_columns[0]),
+            AREA_REF => bytes(&self.ref_columns[1]),
+            ITEM_REF => bytes(&self.ref_columns[2]),
+            LEVEL => &self.level,
+            DETAILS => self.details_json.as_bytes(),
             _ => &[],
         }
     }
@@ -135,8 +173,12 @@ pub extern "C" fn generate(players: i32, magic_find: i32, character_level: i32, 
         return ERROR;
     }
 
-    output.lookup = HashMap::new();
-    output.dictionary_json = serde_json::to_string(&output.dictionary).unwrap_or_default();
+    output.dictionary_json = serde_json::to_string(&output.dictionary.keys).unwrap_or_default();
+    output.dictionary.lookup = HashMap::new();
+    let [monsters, areas, items] = &output.refs;
+    let details = details::build(&game_data, &DisplayData::load(), &monsters.keys, &areas.keys, &items.keys);
+    output.details_json = details.to_string();
+    output.refs = Default::default();
     let rows = output.chance.len() as u32;
     *RESULT.lock().unwrap() = Some(output);
     rows

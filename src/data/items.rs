@@ -74,6 +74,65 @@ pub struct BaseItem {
     pub tier: ItemTier,
     /// Virtual treasure-class bucket names this item belongs to, e.g. "weap3", "axe3", "mele3".
     pub virtual_tc_names: Vec<String>,
+    /// Display-only stats for the web app's hover card.
+    pub stats: BaseStats,
+}
+
+/// Base item stats as stored in weapons/armor/misc.txt; absent columns stay `None`.
+#[derive(Clone, Default)]
+pub struct BaseStats {
+    pub required_level: Option<i32>,
+    pub required_str: Option<i32>,
+    pub required_dex: Option<i32>,
+    pub defense: Option<(i32, i32)>,
+    pub one_hand_damage: Option<(i32, i32)>,
+    pub two_hand_damage: Option<(i32, i32)>,
+    pub durability: Option<i32>,
+    pub max_sockets: Option<i32>,
+}
+
+fn pair(row: &super::raw::Row, min: &str, max: &str) -> Option<(i32, i32)> {
+    match (get_i32(row, min), get_i32(row, max)) {
+        (Some(a), Some(b)) if a > 0 || b > 0 => Some((a, b)),
+        _ => None,
+    }
+}
+
+fn parse_base_stats(row: &super::raw::Row) -> BaseStats {
+    let positive = |col: &str| get_i32(row, col).filter(|v| *v > 0);
+    BaseStats {
+        required_level: positive("levelreq"),
+        required_str: positive("reqstr"),
+        required_dex: positive("reqdex"),
+        defense: pair(row, "minac", "maxac"),
+        // Two-handed-only weapons (e.g. polearms) keep their damage in the 2H columns only.
+        one_hand_damage: pair(row, "mindam", "maxdam"),
+        two_hand_damage: pair(row, "2handmindam", "2handmaxdam"),
+        durability: if is_one(row, "nodurability") { None } else { positive("durability") },
+        max_sockets: positive("gemsockets"),
+    }
+}
+
+/// One unique/set item property, as written in uniqueitems/setitems.txt (`prop`/`par`/`min`/`max`).
+#[derive(Clone)]
+pub struct RawProp {
+    pub code: String,
+    pub par: String,
+    pub min: String,
+    pub max: String,
+}
+
+fn read_props(row: &super::raw::Row, prop: &str, par: &str, min: &str, max: &str) -> Option<RawProp> {
+    let code = get(row, prop).trim();
+    if code.is_empty() {
+        return None;
+    }
+    Some(RawProp {
+        code: code.to_string(),
+        par: get(row, par).trim().to_string(),
+        min: get(row, min).trim().to_string(),
+        max: get(row, max).trim().to_string(),
+    })
 }
 
 fn parse_base_items(data: &str, item_types: &HashMap<String, ItemType>) -> Vec<BaseItem> {
@@ -151,6 +210,7 @@ fn parse_base_items(data: &str, item_types: &HashMap<String, ItemType>) -> Vec<B
             level,
             tier,
             virtual_tc_names,
+            stats: parse_base_stats(row),
         });
     }
     result
@@ -205,6 +265,12 @@ pub struct NamedItem {
     /// is shown as "Sander's Taboo").
     pub name: String,
     pub base_code: String,
+    pub required_level: Option<i32>,
+    /// Set name (setitems.txt `set`); empty for uniques.
+    pub set_name: String,
+    pub props: Vec<RawProp>,
+    /// Partial set bonuses as (number of set items worn, property).
+    pub set_bonuses: Vec<(i32, RawProp)>,
     pub level: i32,
     pub rarity: i64,
     pub only_drops_from_monster_class: Option<String>,
@@ -232,6 +298,12 @@ fn load_unique_items(data: &str, base_items_by_code: &HashMap<String, BaseItem>)
             id: get(row, "index").trim().to_string(),
             name: String::new(),
             base_code,
+            required_level: get_i32(row, "lvl req"),
+            set_name: String::new(),
+            props: (1..=12)
+                .filter_map(|i| read_props(row, &format!("prop{i}"), &format!("par{i}"), &format!("min{i}"), &format!("max{i}")))
+                .collect(),
+            set_bonuses: Vec::new(),
             level,
             rarity: get_i64(row, "rarity").unwrap_or(1),
             only_drops_from_monster_class: None,
@@ -258,6 +330,20 @@ fn load_set_items(data: &str, base_items_by_code: &HashMap<String, BaseItem>) ->
             id: get(row, "index").trim().to_string(),
             name: String::new(),
             base_code,
+            required_level: get_i32(row, "lvl req"),
+            set_name: get(row, "set").trim().to_string(),
+            props: (1..=9)
+                .filter_map(|i| read_props(row, &format!("prop{i}"), &format!("par{i}"), &format!("min{i}"), &format!("max{i}")))
+                .collect(),
+            // aprop1a/b apply with 2 items worn, aprop2a/b with 3, and so on.
+            set_bonuses: (1..=5)
+                .flat_map(|i| {
+                    ["a", "b"].into_iter().filter_map(move |x| {
+                        read_props(row, &format!("aprop{i}{x}"), &format!("apar{i}{x}"), &format!("amin{i}{x}"), &format!("amax{i}{x}"))
+                            .map(|p| (i + 1, p))
+                    })
+                })
+                .collect(),
             level,
             rarity: get_i64(row, "rarity").unwrap_or(1),
             only_drops_from_monster_class,

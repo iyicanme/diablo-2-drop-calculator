@@ -1,6 +1,7 @@
 pub mod items;
 pub mod levels;
 pub mod monsters;
+pub mod props;
 pub mod raw;
 pub mod strings;
 pub mod superuniques;
@@ -10,6 +11,7 @@ use items::ItemDatabase;
 use levels::Area;
 use monsters::MonsterClass;
 use std::collections::HashMap;
+use crate::model::Difficulty;
 use superuniques::SuperUnique;
 use treasureclass::TreasureClassLibrary;
 
@@ -30,6 +32,13 @@ const ITEM_NAMES_JSON: &str = include_str!("../../data/item-names.json");
 const ITEM_RUNES_JSON: &str = include_str!("../../data/item-runes.json");
 const LEVELS_JSON: &str = include_str!("../../data/levels.json");
 
+// Display-only data for the web app's hover cards (blizzhackers/d2data, see data/SOURCE.md).
+const MONLVL_JSON: &str = include_str!("../../data/monlvl.json");
+const PROPERTIES_JSON: &str = include_str!("../../data/properties.json");
+const SKILLS_JSON: &str = include_str!("../../data/skills.json");
+const SKILLDESC_JSON: &str = include_str!("../../data/skilldesc.json");
+const LOCALESTRINGS_ENG_JSON: &str = include_str!("../../data/localestrings-eng.json");
+
 pub struct GameData {
     pub monster_classes: HashMap<String, MonsterClass>,
     pub areas: HashMap<String, Area>,
@@ -37,6 +46,49 @@ pub struct GameData {
     pub treasure_classes: TreasureClassLibrary,
     pub items: ItemDatabase,
     pub monster_names: HashMap<String, String>,
+}
+
+/// Per-level base life and experience (monlvl.json's expansion `L-` columns), which monstats.txt's
+/// HP/Exp percentages apply to. Indexed by monster level.
+pub struct MonsterLevelTable {
+    pub hp: HashMap<Difficulty, Vec<i64>>,
+    pub xp: HashMap<Difficulty, Vec<i64>>,
+}
+
+impl MonsterLevelTable {
+    pub fn load(data: &str) -> Self {
+        let rows: HashMap<String, serde_json::Value> =
+            serde_json::from_str(data.strip_prefix('\u{FEFF}').unwrap_or(data)).expect("monlvl.json");
+        let mut by_level: Vec<(i64, &serde_json::Value)> =
+            rows.values().filter_map(|r| Some((r.get("Level")?.as_i64()?, r))).collect();
+        by_level.sort_by_key(|(level, _)| *level);
+        let column = |name: &str| -> Vec<i64> {
+            by_level.iter().map(|(_, r)| r.get(name).and_then(|v| v.as_i64()).unwrap_or(0)).collect()
+        };
+        let mut hp = HashMap::new();
+        let mut xp = HashMap::new();
+        for (difficulty, suffix) in [(Difficulty::Normal, ""), (Difficulty::Nightmare, "(N)"), (Difficulty::Hell, "(H)")] {
+            hp.insert(difficulty, column(&format!("L-HP{suffix}")));
+            xp.insert(difficulty, column(&format!("L-XP{suffix}")));
+        }
+        MonsterLevelTable { hp, xp }
+    }
+}
+
+/// Everything the hover cards need beyond the drop tables. Loaded separately from `GameData` so
+/// the CLI never parses it.
+pub struct DisplayData {
+    pub monster_levels: MonsterLevelTable,
+    pub props: props::PropRenderer,
+}
+
+impl DisplayData {
+    pub fn load() -> Self {
+        DisplayData {
+            monster_levels: MonsterLevelTable::load(MONLVL_JSON),
+            props: props::PropRenderer::load(PROPERTIES_JSON, SKILLS_JSON, SKILLDESC_JSON, LOCALESTRINGS_ENG_JSON),
+        }
+    }
 }
 
 impl GameData {

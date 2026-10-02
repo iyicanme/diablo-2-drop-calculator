@@ -10,6 +10,18 @@ pub struct MonsterClass {
     pub minion_ids: Vec<String>,
     pub treasure_classes: HashMap<(Difficulty, TreasureClassType), String>,
     pub resistances: HashMap<Difficulty, Resistances>,
+    /// Display-only, for the web app's hover card.
+    pub stats: HashMap<Difficulty, MonsterStats>,
+    pub is_undead: bool,
+    pub is_demon: bool,
+}
+
+/// Life and experience as monstats.txt stores them: percentages of monlvl's per-level base values.
+#[derive(Clone, Copy, Default)]
+pub struct MonsterStats {
+    pub min_hp_pct: i32,
+    pub max_hp_pct: i32,
+    pub exp_pct: i32,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -93,6 +105,22 @@ pub fn load_monster_classes(data: &str) -> HashMap<String, MonsterClass> {
             }
         }
 
+        let mut stats = HashMap::new();
+        for (difficulty, min_hp, max_hp, exp) in [
+            (Difficulty::Normal, "minHP", "maxHP", "Exp"),
+            (Difficulty::Nightmare, "MinHP(N)", "MaxHP(N)", "Exp(N)"),
+            (Difficulty::Hell, "MinHP(H)", "MaxHP(H)", "Exp(H)"),
+        ] {
+            stats.insert(
+                difficulty,
+                MonsterStats {
+                    min_hp_pct: get_i32(row, min_hp).unwrap_or(0),
+                    max_hp_pct: get_i32(row, max_hp).unwrap_or(0),
+                    exp_pct: get_i32(row, exp).unwrap_or(0),
+                },
+            );
+        }
+
         let mut resistances = HashMap::new();
         resistances.insert(Difficulty::Normal, parse_resistances(row, ""));
         resistances.insert(Difficulty::Nightmare, parse_resistances(row, "(N)"));
@@ -108,6 +136,9 @@ pub fn load_monster_classes(data: &str) -> HashMap<String, MonsterClass> {
                 minion_ids,
                 treasure_classes,
                 resistances,
+                stats,
+                is_undead: is_one(row, "lUndead") || is_one(row, "hUndead"),
+                is_demon: is_one(row, "demon"),
             },
         );
     }
