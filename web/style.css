@@ -1,0 +1,489 @@
+:root {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-2: #f0eee9;
+  --row-alt: #faf9f7;
+  --border: #dedad2;
+  --text: #1f1d1a;
+  --muted: #77716a;
+  --accent: #8a5a12;
+  --accent-text: #ffffff;
+  --unique: #8a6d1e;
+  --set: #2d7a1f;
+  --rune: #b25a00;
+  --yes: #a23a2a;
+  --yes-bg: #f8e4df;
+  --error: #b3261e;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141311;
+    --surface: #1c1b18;
+    --surface-2: #26241f;
+    --row-alt: #201f1b;
+    --border: #36332d;
+    --text: #e9e5dc;
+    --muted: #9b958a;
+    --accent: #d2a24c;
+    --accent-text: #1a1408;
+    --unique: #c7b377;
+    --set: #6fd25a;
+    --rune: #f0a04b;
+    --yes: #f08f7c;
+    --yes-bg: #3a221c;
+    --error: #ff8a80;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body.busy {
+  cursor: progress;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---- header & inputs ---- */
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 32px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.inputs input {
+  width: 120px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.inputs input:focus,
+.finput:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+button {
+  padding: 7px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.secondary {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Live filter, kept visually apart from the inputs that need Calculate. */
+.immunities {
+  margin-left: auto;
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.immunities-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.immunities-head .hint {
+  font-size: 11px;
+  font-style: italic;
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.checks input,
+.picker-item input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* ---- toolbar ---- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 16px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.tab[aria-selected='true'] {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.tab .count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.status {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.status.error {
+  color: var(--error);
+}
+
+/* ---- table ---- */
+
+.scroller {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 16px 16px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.table {
+  position: relative;
+  min-width: 100%;
+}
+
+.thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.hrow,
+.tr {
+  display: grid;
+  grid-template-columns: var(--cols);
+}
+
+.th {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.th:hover {
+  background: var(--border);
+}
+
+.th.num {
+  justify-content: flex-end;
+}
+
+.th-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sort-ind {
+  font-size: 10px;
+  color: var(--accent);
+}
+
+.filters {
+  padding-bottom: 6px;
+}
+
+.fcell {
+  padding: 0 4px;
+}
+
+.finput {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.fcell.with-pick {
+  display: flex;
+  gap: 3px;
+}
+
+.pick {
+  flex: none;
+  min-width: 26px;
+  padding: 0 6px;
+  border-color: var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.pick.active,
+.pick[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- checkbox-list picker ---- */
+
+.picker {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 300px;
+  max-height: min(420px, 70vh);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.picker-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.picker-actions button {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.picker-list {
+  overflow: auto;
+  min-height: 0;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.picker-item:hover {
+  background: var(--surface-2);
+}
+
+.picker-item[hidden] {
+  display: none;
+}
+
+.tbody {
+  position: relative;
+}
+
+.spacer {
+  position: relative;
+  overflow: hidden;
+}
+
+.tr {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  align-items: center;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.tr.odd {
+  background: var(--row-alt);
+}
+
+.tr:hover {
+  background: var(--surface-2);
+}
+
+.td {
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr[data-quality='unique'] .col-item,
+.tr[data-quality='unique'] .col-quality {
+  color: var(--unique);
+  font-weight: 600;
+}
+
+.tr[data-quality='set'] .col-item,
+.tr[data-quality='set'] .col-quality {
+  color: var(--set);
+  font-weight: 600;
+}
+
+.tr[data-quality='rune'] .col-item {
+  color: var(--rune);
+  font-weight: 600;
+}
+
+.td.col-terrorized {
+  color: var(--muted);
+}
+
+.td.yes {
+  color: var(--yes);
+  font-weight: 600;
+}
+
+.empty {
+  position: absolute;
+  top: 110px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty[hidden] {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .immunities {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .scroller {
+    margin: 0 8px 8px;
+  }
+  .inputs input {
+    width: 96px;
+  }
+}

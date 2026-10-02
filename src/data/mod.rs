@@ -1,0 +1,86 @@
+pub mod items;
+pub mod levels;
+pub mod monsters;
+pub mod raw;
+pub mod strings;
+pub mod superuniques;
+pub mod treasureclass;
+
+use items::ItemDatabase;
+use levels::Area;
+use monsters::MonsterClass;
+use std::collections::HashMap;
+use superuniques::SuperUnique;
+use treasureclass::TreasureClassLibrary;
+
+const MONSTATS_TXT: &str = include_str!("../../data/monstats.txt");
+const LEVELS_TXT: &str = include_str!("../../data/levels.txt");
+const TREASURECLASSEX_TXT: &str = include_str!("../../data/treasureclassex.txt");
+const SUPERUNIQUES_TXT: &str = include_str!("../../data/superuniques.txt");
+const WEAPONS_TXT: &str = include_str!("../../data/weapons.txt");
+const ARMOR_TXT: &str = include_str!("../../data/armor.txt");
+const MISC_TXT: &str = include_str!("../../data/misc.txt");
+const ITEMTYPES_TXT: &str = include_str!("../../data/itemtypes.txt");
+const ITEMRATIO_TXT: &str = include_str!("../../data/itemratio.txt");
+const UNIQUEITEMS_TXT: &str = include_str!("../../data/uniqueitems.txt");
+const SETITEMS_TXT: &str = include_str!("../../data/setitems.txt");
+
+const MONSTERS_JSON: &str = include_str!("../../data/monsters.json");
+const ITEM_NAMES_JSON: &str = include_str!("../../data/item-names.json");
+const ITEM_RUNES_JSON: &str = include_str!("../../data/item-runes.json");
+const LEVELS_JSON: &str = include_str!("../../data/levels.json");
+
+pub struct GameData {
+    pub monster_classes: HashMap<String, MonsterClass>,
+    pub areas: HashMap<String, Area>,
+    pub superuniques: Vec<SuperUnique>,
+    pub treasure_classes: TreasureClassLibrary,
+    pub items: ItemDatabase,
+    pub monster_names: HashMap<String, String>,
+}
+
+impl GameData {
+    pub fn load() -> Self {
+        let monster_classes = monsters::load_monster_classes(MONSTATS_TXT);
+        let hardcoded_boss_areas = superuniques::hardcoded_boss_areas();
+        let mut areas = levels::load_areas(LEVELS_TXT, &hardcoded_boss_areas);
+        let hardcoded_superunique_areas = superuniques::hardcoded_superunique_areas();
+        let mut superuniques = superuniques::load_superuniques(SUPERUNIQUES_TXT, &hardcoded_superunique_areas);
+        let treasure_classes = TreasureClassLibrary::load(TREASURECLASSEX_TXT);
+
+        let mut item_names = strings::load_string_table(ITEM_NAMES_JSON);
+        item_names.extend(strings::load_string_table(ITEM_RUNES_JSON));
+        let items = ItemDatabase::load(
+            WEAPONS_TXT,
+            ARMOR_TXT,
+            MISC_TXT,
+            ITEMTYPES_TXT,
+            ITEMRATIO_TXT,
+            UNIQUEITEMS_TXT,
+            SETITEMS_TXT,
+            item_names,
+        );
+
+        let monster_names = strings::load_string_table(MONSTERS_JSON);
+
+        // levels.txt / superuniques.txt hold string keys, not the names the game shows (e.g. the
+        // "Chaos Sanctum" key is displayed as "The Chaos Sanctuary"). Keys without an entry are kept.
+        let level_names = strings::load_string_table(LEVELS_JSON);
+        for area in areas.values_mut() {
+            if let Some(name) = level_names.get(&area.display_name) {
+                area.display_name = name.clone();
+            }
+        }
+        for superunique in &mut superuniques {
+            if let Some(name) = monster_names.get(&superunique.name) {
+                superunique.name = name.clone();
+            }
+        }
+
+        GameData { monster_classes, areas, superuniques, treasure_classes, items, monster_names }
+    }
+
+    pub fn monster_display_name(&self, name_str: &str) -> String {
+        self.monster_names.get(name_str).cloned().unwrap_or_else(|| name_str.to_string())
+    }
+}
