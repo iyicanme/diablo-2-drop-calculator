@@ -25,8 +25,12 @@
         </label>
         <button id="run" type="submit">Calculate</button>
       </form>
-      <div id="immunities" class="immunities" role="group" aria-labelledby="immunities-title">
-        <div class="immunities-head">
+      <label class="live-filter stat-filter-panel" title="Items whose stats, set bonuses or rune/gem socket bonuses mention this text. Case-insensitive; separate alternatives with commas.">
+        <span class="live-head">Filter by item stats <span class="hint">applies instantly</span></span>
+        <input id="stat-filter" class="stat-filter" type="search" placeholder="e.g. mana, faster cast" />
+      </label>
+      <div id="immunities" class="live-filter immunities" role="group" aria-labelledby="immunities-title">
+        <div class="live-head">
           <span id="immunities-title">Filter out enemies with immunities</span>
           <span class="hint">applies instantly</span>
         </div>

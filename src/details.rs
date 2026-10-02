@@ -99,6 +99,18 @@ fn item(game_data: &GameData, display: &DisplayData, named: &HashMap<&str, (&Nam
         let mut out = base_stats(game_data, base);
         out.insert("name".into(), json!(items.base_item_display_name(base)));
         out.insert("kind".into(), json!("base"));
+        // Runes and gems: what they add when socketed, per kind of item.
+        if let Some(slots) = display.socket_bonuses.get(code) {
+            let socketed: Vec<Value> = slots
+                .iter()
+                .map(|(slot, props)| {
+                    let lines: Vec<String> = props.iter().filter_map(|p| display.props.render(p)).collect();
+                    json!({ "slot": slot, "lines": lines })
+                })
+                .filter(|s| s["lines"].as_array().is_some_and(|l| !l.is_empty()))
+                .collect();
+            out.insert("socketed".into(), json!(socketed));
+        }
         return Value::Object(out);
     }
     let Some(&(n, kind)) = named.get(key) else { return Value::Null };
@@ -184,6 +196,19 @@ mod tests {
         assert!(griffon.iter().any(|l| l == "+(10-15)% to Lightning Skill Damage"), "{griffon:?}");
         let carin = named_props(&g, &d, "Carin Shard");
         assert!(carin.iter().any(|l| l == "+2 to Summoning Skills (Necromancer only)"), "{carin:?}");
+    }
+
+    #[test]
+    fn renders_socket_bonuses() {
+        let d = DisplayData::load();
+        let lines = |code: &str, slot: &str| -> Vec<String> {
+            let slots = &d.socket_bonuses[code];
+            let (_, props) = slots.iter().find(|(s, _)| *s == slot).unwrap();
+            props.iter().filter_map(|p| d.props.render(p)).collect()
+        };
+        assert_eq!(lines("gcb", "Armor and helms"), ["+10 to Mana"]);
+        assert_eq!(lines("r30", "Weapons"), ["20% Chance of Crushing Blow"]);
+        assert_eq!(lines("r33", "Shields"), ["Indestructible"]);
     }
 
     #[test]
