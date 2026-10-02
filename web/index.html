@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>D2R Drop Calculator</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <h1>D2R Drop Calculator</h1>
+      <form id="inputs" class="inputs">
+        <label title="Number of players in the game (1-8). Lowers the effective &quot;nothing dropped&quot; chance.">
+          <span>Players</span>
+          <input name="players" type="number" min="1" max="8" step="1" value="1" required />
+        </label>
+        <label title="Magic Find percentage.">
+          <span>Magic Find %</span>
+          <input name="magicFind" type="number" min="0" step="1" value="0" required />
+        </label>
+        <label title="Character level, used only to scale Terror Zone (&quot;terrorized&quot;) rows.">
+          <span>Character level</span>
+          <input name="characterLevel" type="number" min="1" max="99" step="1" value="99" required />
+        </label>
+        <button id="run" type="submit">Calculate</button>
+      </form>
+      <div id="immunities" class="immunities" role="group" aria-labelledby="immunities-title">
+        <div class="immunities-head">
+          <span id="immunities-title">Filter out enemies with immunities</span>
+          <span class="hint">applies instantly</span>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" name="fire" /> Fire</label>
+          <label><input type="checkbox" name="cold" /> Cold</label>
+          <label><input type="checkbox" name="lightning" /> Lightning</label>
+          <label><input type="checkbox" name="poison" /> Poison</label>
+          <label><input type="checkbox" name="magic" /> Magic</label>
+          <label><input type="checkbox" name="physical" /> Physical</label>
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div id="tabs" class="tabs" role="tablist"></div>
+      <div class="actions">
+        <span id="status" class="status" aria-live="polite"></span>
+        <button id="clear" type="button" class="secondary">Clear filters</button>
+        <button id="download" type="button" class="secondary">Download CSV</button>
+      </div>
+    </div>
+
+    <main id="scroller" class="scroller">
+      <div id="table" class="table">
+        <div class="thead">
+          <div id="head-row" class="hrow"></div>
+          <div id="filter-row" class="hrow filters"></div>
+        </div>
+        <div id="body" class="tbody">
+          <div id="spacer" class="spacer"></div>
+        </div>
+      </div>
+      <p id="empty" class="empty"></p>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
