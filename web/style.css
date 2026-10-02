@@ -328,8 +328,10 @@ button.secondary {
   white-space: nowrap;
 }
 
-.th:hover {
-  background: var(--border);
+@media (hover: hover) {
+  .th:hover {
+    background: var(--border);
+  }
 }
 
 .th.num {
@@ -397,8 +399,9 @@ button.secondary {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 300px;
+  width: min(300px, calc(100vw - 16px));
   max-height: min(420px, 70vh);
+  max-height: min(420px, 70dvh);
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -431,8 +434,10 @@ button.secondary {
   cursor: pointer;
 }
 
-.picker-item:hover {
-  background: var(--surface-2);
+@media (hover: hover) {
+  .picker-item:hover {
+    background: var(--surface-2);
+  }
 }
 
 .picker-item[hidden] {
@@ -446,6 +451,7 @@ button.secondary {
 .spacer {
   position: relative;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tr {
@@ -453,7 +459,7 @@ button.secondary {
   top: 0;
   left: 0;
   right: 0;
-  height: 28px;
+  height: var(--row-h, 28px);
   align-items: center;
   border-bottom: 1px solid var(--surface-2);
 }
@@ -462,8 +468,10 @@ button.secondary {
   background: var(--row-alt);
 }
 
-.tr:hover {
-  background: var(--surface-2);
+@media (hover: hover) {
+  .tr:hover {
+    background: var(--surface-2);
+  }
 }
 
 .td {
@@ -532,6 +540,48 @@ button.secondary {
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
   font-size: 13px;
   pointer-events: none;
+}
+
+/* Touch: the card opens on tap as a bottom sheet that scrolls and has a close button. */
+.hovercard.sheet {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: auto;
+  max-width: 560px;
+  max-height: 65vh;
+  max-height: 65dvh;
+  margin: 0 auto;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.18);
+  pointer-events: auto;
+}
+
+.hc-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: -4px -6px 0 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-color: var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.td.card-open {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .hovercard[hidden] {
@@ -651,7 +701,65 @@ button.secondary {
   color: var(--set);
 }
 
+/* Touch: details open on tap, so mark the cells that have them; enlarge small targets; keep
+   form text at 16px so iOS doesn't zoom the page on focus. */
+@media (pointer: coarse) {
+  .td.col-monster,
+  .td.col-location,
+  .td.col-item {
+    cursor: pointer;
+    text-decoration: underline dotted color-mix(in srgb, currentColor 40%, transparent);
+    text-underline-offset: 3px;
+  }
+  input,
+  select,
+  .finput {
+    font-size: 16px;
+  }
+  .pick {
+    min-width: 36px;
+  }
+  .checks {
+    gap: 2px 6px;
+  }
+  .checks label {
+    padding: 6px 8px 6px 0;
+  }
+  .checks input {
+    width: 18px;
+    height: 18px;
+  }
+  .tab,
+  button.secondary {
+    min-height: 36px;
+  }
+  .picker-item {
+    padding: 8px 4px;
+  }
+}
+
+/* Small or short screens: the stacked header can be taller than the screen, so let the page scroll
+   and give the table its own fixed-height viewport instead of the leftover space. */
+@media (max-width: 640px), (max-height: 560px) {
+  html,
+  body {
+    height: auto;
+  }
+  .scroller {
+    flex: none;
+    height: 85vh;
+    height: 85dvh;
+    min-height: 280px;
+  }
+}
+
 @media (max-width: 640px) {
+  .top {
+    padding: 12px;
+  }
+  .toolbar {
+    padding: 8px 12px;
+  }
   .scroller {
     margin: 0 8px 8px;
   }
