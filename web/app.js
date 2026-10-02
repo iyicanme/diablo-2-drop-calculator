@@ -57,6 +57,7 @@ let sort = { id: null, dir: 1 }; // dir 1 asc, -1 desc
 // text: { text, selected: Set<dict index> | null }, enum/flag: string ('' = all), max: string
 const filters = {};
 let excludedImmunities = 0; // bitmask over `flags`; rows with any of these bits are hidden
+let statFilter = ''; // text searched in item stat lines, set bonuses and rune/gem socket bonuses
 let view = new Uint32Array(0);
 let viewBuf = new Uint32Array(0);
 let categoryCounts = [0, 0, 0];
@@ -73,6 +74,14 @@ try {
   const saved = JSON.parse(localStorage.getItem('drop_calc.inputs') || 'null');
   if (saved) for (const id of INPUT_IDS) if (saved[id] != null) form.elements[id].value = saved[id];
 } catch {}
+
+// Header: one row when the inputs and both live filters fit, else stack them all vertically.
+const header = $('.top');
+function layoutHeader() {
+  header.classList.remove('stacked');
+  if (header.scrollWidth > header.clientWidth + 1) header.classList.add('stacked');
+}
+new ResizeObserver(layoutHeader).observe(header);
 
 const immunityBoxes = [...document.querySelectorAll('#immunities input[type=checkbox]')];
 try {
@@ -123,7 +132,9 @@ worker.onmessage = ({ data: msg }) => {
   order.forEach((d, rank) => (dictRank[d] = rank));
   const categoryTotals = [0, 0, 0];
   for (const c of msg.columns.category) categoryTotals[c]++;
-  data = { ...msg, dictRank, categoryTotals, inputs: worker.inputs };
+  // Lowercased stat lines per item for the item-stats filter. Plain base items have none.
+  const itemStats = msg.details.items.map((it) => statLines(it).join('\n').toLowerCase());
+  data = { ...msg, dictRank, categoryTotals, itemStats, inputs: worker.inputs };
   permCache.clear();
   optionCache.clear();
   closePicker();
@@ -366,6 +377,25 @@ document.addEventListener('keydown', (e) => {
 
 // ---- filtering -----------------------------------------------------------------------------------
 
+/** Every searchable line of an item: own stats, set bonuses, and what a rune/gem adds when socketed. */
+function statLines(it) {
+  if (!it) return [];
+  return [
+    ...(it.props || []),
+    ...(it.setBonuses || []).map((b) => b.text),
+    ...(it.socketed || []).flatMap((s) => s.lines),
+  ];
+}
+
+/** Comma-separated, case-insensitive alternatives. */
+const splitTerms = (s) => s.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+
+const statInput = $('#stat-filter');
+statInput.addEventListener('input', () => {
+  statFilter = statInput.value;
+  refreshSoon();
+});
+
 function buildTests() {
   const { columns, dictionary } = data;
   const tests = [];
@@ -375,7 +405,7 @@ function buildTests() {
     const f = filters[c.id];
     if (c.type === 'text') {
       if (!f) continue;
-      const terms = f.text.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+      const terms = splitTerms(f.text);
       if (!terms.length && !f.selected) continue;
       // Text and checkbox selection both narrow the column (AND).
       const mask = new Uint8Array(dictionary.length);
@@ -404,6 +434,15 @@ function buildTests() {
       const chance = columns.chance;
       tests.push((r) => Math.round(10 / chance[r]) / 10 <= max);
     }
+  }
+  const statTerms = splitTerms(statFilter);
+  if (statTerms.length) {
+    const mask = new Uint8Array(data.itemStats.length);
+    data.itemStats.forEach((text, i) => {
+      if (statTerms.some((t) => text.includes(t))) mask[i] = 1;
+    });
+    const itemRef = columns.itemRef;
+    tests.push((r) => mask[itemRef[r]] === 1);
   }
   if (excludedImmunities) {
     const flags = columns.flags;
@@ -800,7 +839,7 @@ function itemCard(r) {
     cardHead(it.name, subtitle, kindClass),
     facts([
       ['Set', it.set],
-      ['Item level', it.qlvl],
+      ['Item level', it.qlvl || null], // 0 for runes/gems, which drop from their own TCs
       ['Required level', it.reqLevel],
       ['Defense', pair(it.defense)],
       ['One-hand damage', pair(it.damage1h)],
@@ -814,16 +853,21 @@ function itemCard(r) {
   if (it.kind !== 'base') {
     out.push(el('div', 'hc-note', 'Base defense/damage shown; the item’s own bonuses are below.'));
   }
-  if (it.props?.length) {
-    const list = el('ul', 'hc-props');
-    for (const line of it.props) list.append(el('li', null, line));
-    out.push(section(null, list));
-  }
+  // Lines matching the item-stats filter are emphasised.
+  const terms = splitTerms(statFilter);
+  const statList = (lines, cls) => {
+    const list = el('ul', `hc-props ${cls || ''}`);
+    for (const [line, label] of lines) {
+      const lower = line.toLowerCase();
+      list.append(el('li', terms.some((t) => lower.includes(t)) ? 'match' : null, label ?? line));
+    }
+    return list;
+  };
+  if (it.props?.length) out.push(section(null, statList(it.props.map((l) => [l]))));
   if (it.setBonuses?.length) {
-    const list = el('ul', 'hc-props set');
-    for (const b of it.setBonuses) list.append(el('li', null, `${b.text} (${b.items} items)`));
-    out.push(section('Set bonuses', list));
+    out.push(section('Set bonuses', statList(it.setBonuses.map((b) => [b.text, `${b.text} (${b.items} items)`]), 'set')));
   }
+  for (const s of it.socketed || []) out.push(section(`Socketed in ${s.slot.toLowerCase()}`, statList(s.lines.map((l) => [l]))));
   return out;
 }
 
@@ -831,6 +875,7 @@ function itemCard(r) {
 
 $('#clear').addEventListener('click', () => {
   for (const k of Object.keys(filters)) delete filters[k];
+  statFilter = statInput.value = '';
   closePicker();
   buildFilterRow();
   refresh();

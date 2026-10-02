@@ -11,6 +11,6 @@ and algorithm details, the DropCalc source (which carries no explicit license) f
 only, not by copying its code.
 
 The display-only files used for the web app's hover cards — `monlvl.json`, `properties.json`,
-`skills.json`, `skilldesc.json` and `localestrings-eng.json` — are the same D2R 3.0 game data,
+`skills.json`, `skilldesc.json`, `localestrings-eng.json` and `gems.json` — are the same D2R 3.0 game data,
 taken in JSON form from the `blizzhackers/d2data` GitHub repository (MIT-licensed tooling; the
 data itself remains Blizzard's). Same personal, non-commercial terms as above.

@@ -38,6 +38,7 @@ const PROPERTIES_JSON: &str = include_str!("../../data/properties.json");
 const SKILLS_JSON: &str = include_str!("../../data/skills.json");
 const SKILLDESC_JSON: &str = include_str!("../../data/skilldesc.json");
 const LOCALESTRINGS_ENG_JSON: &str = include_str!("../../data/localestrings-eng.json");
+const GEMS_JSON: &str = include_str!("../../data/gems.json");
 
 pub struct GameData {
     pub monster_classes: HashMap<String, MonsterClass>,
@@ -80,6 +81,42 @@ impl MonsterLevelTable {
 pub struct DisplayData {
     pub monster_levels: MonsterLevelTable,
     pub props: props::PropRenderer,
+    /// Rune/gem code -> (socket slot label, properties granted when socketed there).
+    pub socket_bonuses: HashMap<String, Vec<(&'static str, Vec<items::RawProp>)>>,
+}
+
+/// gems.json: up to three `{slot}Mod{n}Code/Param/Min/Max` properties per socket slot.
+fn load_socket_bonuses(data: &str) -> HashMap<String, Vec<(&'static str, Vec<items::RawProp>)>> {
+    let gems: HashMap<String, serde_json::Value> =
+        serde_json::from_str(data.strip_prefix('\u{FEFF}').unwrap_or(data)).expect("gems.json");
+    let text = |v: Option<&serde_json::Value>| match v {
+        Some(serde_json::Value::String(s)) => s.clone(),
+        Some(serde_json::Value::Number(n)) => n.to_string(),
+        _ => String::new(),
+    };
+    gems.values()
+        .filter_map(|g| {
+            let code = g.get("code")?.as_str()?.to_string();
+            let slots = [("weapon", "Weapons"), ("helm", "Armor and helms"), ("shield", "Shields")]
+                .into_iter()
+                .map(|(key, label)| {
+                    let props = (1..=3)
+                        .filter_map(|n| {
+                            let prop = text(g.get(&format!("{key}Mod{n}Code")));
+                            (!prop.is_empty()).then(|| items::RawProp {
+                                code: prop,
+                                par: text(g.get(&format!("{key}Mod{n}Param"))),
+                                min: text(g.get(&format!("{key}Mod{n}Min"))),
+                                max: text(g.get(&format!("{key}Mod{n}Max"))),
+                            })
+                        })
+                        .collect();
+                    (label, props)
+                })
+                .collect();
+            Some((code, slots))
+        })
+        .collect()
 }
 
 impl DisplayData {
@@ -87,6 +124,7 @@ impl DisplayData {
         DisplayData {
             monster_levels: MonsterLevelTable::load(MONLVL_JSON),
             props: props::PropRenderer::load(PROPERTIES_JSON, SKILLS_JSON, SKILLDESC_JSON, LOCALESTRINGS_ENG_JSON),
+            socket_bonuses: load_socket_bonuses(GEMS_JSON),
         }
     }
 }

@@ -73,12 +73,22 @@ select {
 
 .top {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px 32px;
+  gap: 12px 24px;
   padding: 14px 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+
+/* One row while everything fits; otherwise every block on its own line (app.js toggles
+   .stacked), rather than flex-wrap's partial wrapping. */
+.top > * {
+  flex: none;
+}
+
+.top.stacked {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 h1 {
@@ -139,16 +149,24 @@ button.secondary {
   font-weight: 500;
 }
 
-/* Live filter, kept visually apart from the inputs that need Calculate. */
-.immunities {
-  margin-left: auto;
+/* Live filters, kept visually apart from the inputs that need Calculate. */
+.live-filter {
+  display: block;
   padding: 8px 12px;
   border: 1px dashed var(--border);
   border-radius: 8px;
   background: var(--bg);
 }
 
-.immunities-head {
+.stat-filter-panel {
+  margin-left: auto;
+}
+
+.top.stacked .stat-filter-panel {
+  margin-left: 0;
+}
+
+.live-head {
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -157,7 +175,7 @@ button.secondary {
   color: var(--muted);
 }
 
-.immunities-head .hint {
+.live-head .hint {
   font-size: 11px;
   font-style: italic;
 }
@@ -226,6 +244,31 @@ button.secondary {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.stat-filter {
+  display: block;
+  width: 240px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.top.stacked .stat-filter {
+  width: 100%;
+}
+
+.stat-filter:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.hc-props li.match {
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 2px;
 }
 
 .status {
@@ -606,12 +649,6 @@ button.secondary {
 
 .hc-props.set {
   color: var(--set);
-}
-
-@media (max-width: 1100px) {
-  .immunities {
-    margin-left: 0;
-  }
 }
 
 @media (max-width: 640px) {
