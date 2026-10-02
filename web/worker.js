@@ -9,6 +9,7 @@ const modulePromise = WebAssembly.compileStreaming(fetch('drop_calc.wasm')).catc
 // Column order matches src/wasm.rs.
 const STRING_COLUMNS = ['monster', 'location', 'difficulty', 'item', 'tc', 'itemType', 'tier', 'quality', 'monsterType'];
 const ACT = 9, FLAGS = 10, CATEGORY = 11, CHANCE = 12, DICTIONARY = 13;
+const MONSTER_REF = 14, AREA_REF = 15, ITEM_REF = 16, LEVEL = 17, DETAILS = 18;
 
 self.onmessage = async ({ data: { players, magicFind, characterLevel } }) => {
   try {
@@ -29,11 +30,18 @@ self.onmessage = async ({ data: { players, magicFind, characterLevel } }) => {
     columns.flags = new Uint8Array(copy(FLAGS));
     columns.category = new Uint8Array(copy(CATEGORY));
     columns.chance = new Float64Array(copy(CHANCE));
-    const dictionary = JSON.parse(new TextDecoder().decode(copy(DICTIONARY)));
+    // Hover cards: indices into details.monsters / .areas / .items, and the row's monster level.
+    columns.monsterRef = new Uint16Array(copy(MONSTER_REF));
+    columns.areaRef = new Uint16Array(copy(AREA_REF));
+    columns.itemRef = new Uint16Array(copy(ITEM_REF));
+    columns.level = new Uint8Array(copy(LEVEL));
+    const decode = (column) => JSON.parse(new TextDecoder().decode(copy(column)));
+    const dictionary = decode(DICTIONARY);
+    const details = decode(DETAILS);
     wasm.free_result();
 
     const elapsed = performance.now() - started;
-    self.postMessage({ rows, columns, dictionary, elapsed }, Object.values(columns).map((c) => c.buffer));
+    self.postMessage({ rows, columns, dictionary, details, elapsed }, Object.values(columns).map((c) => c.buffer));
   } catch (err) {
     self.postMessage({ error: String(err && err.message ? err.message : err) });
   }

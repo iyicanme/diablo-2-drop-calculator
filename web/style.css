@@ -11,6 +11,7 @@
   --unique: #8a6d1e;
   --set: #2d7a1f;
   --rune: #b25a00;
+  --magic: #3550b8;
   --yes: #a23a2a;
   --yes-bg: #f8e4df;
   --error: #b3261e;
@@ -31,6 +32,7 @@
     --unique: #c7b377;
     --set: #6fd25a;
     --rune: #f0a04b;
+    --magic: #8c9cff;
     --yes: #f08f7c;
     --yes-bg: #3a221c;
     --error: #ff8a80;
@@ -471,6 +473,139 @@ button.secondary {
 
 .empty[hidden] {
   display: none;
+}
+
+/* ---- hover cards ---- */
+
+.hovercard {
+  position: fixed;
+  z-index: 20;
+  width: max-content;
+  max-width: 360px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.hovercard[hidden] {
+  display: none;
+}
+
+.hc-head {
+  margin-bottom: 6px;
+}
+
+.hc-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.hc-title.q-unique {
+  color: var(--unique);
+}
+
+.hc-title.q-set {
+  color: var(--set);
+}
+
+.hc-sub,
+.hc-note,
+.hc-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hc-note {
+  margin: 4px 0 2px;
+  font-style: italic;
+}
+
+.hc-label {
+  margin-bottom: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+
+.hc-section {
+  margin-top: 8px;
+}
+
+.hc-tags {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.hc-tag {
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11px;
+}
+
+.hc-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 0;
+}
+
+.hc-facts dt {
+  color: var(--muted);
+}
+
+.hc-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-res {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.hc-res-cell {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-size: 12px;
+}
+
+.hc-res-cell b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-res-cell.immune {
+  background: var(--yes-bg);
+  color: var(--yes);
+}
+
+.hc-list {
+  line-height: 1.45;
+}
+
+.hc-props {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--magic);
+  line-height: 1.45;
+}
+
+.hc-props.set {
+  color: var(--set);
 }
 
 @media (max-width: 1100px) {

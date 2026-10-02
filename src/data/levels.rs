@@ -10,6 +10,8 @@ pub struct Area {
     pub act: i32,
     pub monster_levels: HashMap<Difficulty, i32>,
     pub monster_class_ids: HashMap<(Difficulty, MonsterType), HashSet<String>>,
+    /// Unique packs spawned per visit (`MonUMin`/`MonUMax`), display-only.
+    pub unique_packs: HashMap<Difficulty, (i32, i32)>,
 }
 
 fn read_mons(row: &super::raw::Row, prefix: &str) -> HashSet<String> {
@@ -80,7 +82,16 @@ pub fn load_areas(
         put(Difficulty::Hell, MonsterType::Unique, &nmons | &hardcoded_for(MonsterType::Unique));
         put(Difficulty::Hell, MonsterType::Boss, hardcoded_for(MonsterType::Boss));
 
-        result.insert(id.clone(), Area { id, display_name, act, monster_levels, monster_class_ids });
+        let unique_packs = [
+            (Difficulty::Normal, "MonUMin", "MonUMax"),
+            (Difficulty::Nightmare, "MonUMin(N)", "MonUMax(N)"),
+            (Difficulty::Hell, "MonUMin(H)", "MonUMax(H)"),
+        ]
+        .into_iter()
+        .filter_map(|(d, min, max)| Some((d, (get_i32(row, min)?, get_i32(row, max)?))))
+        .collect();
+
+        result.insert(id.clone(), Area { id, display_name, act, monster_levels, monster_class_ids, unique_packs });
     }
     result
 }
