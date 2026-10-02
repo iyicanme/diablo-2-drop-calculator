@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>D2R Drop Calculator</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="style.css" />
@@ -13,15 +13,15 @@
       <form id="inputs" class="inputs">
         <label title="Number of players in the game (1-8). Lowers the effective &quot;nothing dropped&quot; chance.">
           <span>Players</span>
-          <input name="players" type="number" min="1" max="8" step="1" value="1" required />
+          <input name="players" type="number" inputmode="numeric" min="1" max="8" step="1" value="1" required />
         </label>
         <label title="Magic Find percentage.">
           <span>Magic Find %</span>
-          <input name="magicFind" type="number" min="0" step="1" value="0" required />
+          <input name="magicFind" type="number" inputmode="numeric" min="0" step="1" value="0" required />
         </label>
         <label title="Character level, used only to scale Terror Zone (&quot;terrorized&quot;) rows.">
           <span>Character level</span>
-          <input name="characterLevel" type="number" min="1" max="99" step="1" value="99" required />
+          <input name="characterLevel" type="number" inputmode="numeric" min="1" max="99" step="1" value="99" required />
         </label>
         <button id="run" type="submit">Calculate</button>
       </form>

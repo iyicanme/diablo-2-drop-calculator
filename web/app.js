@@ -1,7 +1,9 @@
 // Drop table UI: inputs -> worker (wasm) -> columnar rows -> filtered/sorted index view -> virtual table.
 // Everything works on row indices into typed arrays; strings are u16 indices into `data.dictionary`.
 
-const ROW_H = 28;
+// Touch screens get taller rows so a tap lands on the intended one.
+const COARSE = matchMedia('(pointer: coarse)').matches;
+const ROW_H = COARSE ? 36 : 28;
 const OVERSCAN = 8;
 // Browsers cap element height (~17.9M px in Firefox), so very long views scroll a capped spacer
 // and map its position onto the full virtual height.
@@ -172,6 +174,7 @@ const emptyMsg = $('#empty');
 
 const template = COLUMNS.map((c) => (c.grow ? `minmax(${c.width}px, ${c.grow}fr)` : `${c.width}px`)).join(' ');
 table.style.setProperty('--cols', template);
+table.style.setProperty('--row-h', `${ROW_H}px`);
 table.style.minWidth = `${COLUMNS.reduce((s, c) => s + c.width, 0)}px`;
 
 for (const c of COLUMNS) {
@@ -229,6 +232,7 @@ function buildFilterRow() {
     } else {
       const input = el('input', 'finput');
       input.type = 'number';
+      input.inputMode = 'decimal';
       input.step = 'any';
       input.min = '1';
       input.placeholder = 'at most…';
@@ -346,15 +350,18 @@ function openPicker(c, anchor) {
   picker = { id: c.id, el: pop, anchor };
   positionPicker();
   updatePickButton(c.id);
-  search.focus();
+  // Focusing on touch would pop the on-screen keyboard over the list.
+  if (lastPointer === 'mouse') search.focus();
 }
 
 function positionPicker() {
   if (!picker) return;
   const rect = picker.anchor.getBoundingClientRect();
-  const width = picker.el.offsetWidth;
+  const { offsetWidth: width, offsetHeight: height } = picker.el;
   picker.el.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`;
-  picker.el.style.top = `${rect.bottom + 4}px`;
+  // Below the filter cell, or above it when there's no room.
+  const below = rect.bottom + 4;
+  picker.el.style.top = `${below + height <= window.innerHeight - 8 ? below : Math.max(8, rect.top - height - 4)}px`;
 }
 
 function closePicker() {
@@ -365,9 +372,18 @@ function closePicker() {
   updatePickButton(id);
 }
 
-document.addEventListener('mousedown', (e) => {
-  if (picker && !picker.el.contains(e.target) && !picker.anchor.contains(e.target)) closePicker();
-});
+// Last pointer type seen: hover cards follow the mouse, but open on tap for touch and pen.
+let lastPointer = 'mouse';
+document.addEventListener(
+  'pointerdown',
+  (e) => {
+    lastPointer = e.pointerType || 'mouse';
+    if (picker && !picker.el.contains(e.target) && !picker.anchor.contains(e.target)) closePicker();
+    // Taps inside the table are handled by its click listener (another cell, or a scroll).
+    if (card.classList.contains('sheet') && !card.contains(e.target) && !spacer.contains(e.target)) hideCard();
+  },
+  true,
+);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closePicker();
@@ -688,6 +704,8 @@ window.addEventListener('resize', () => {
   renderRows();
   positionPicker();
 });
+// On small screens the page itself scrolls (style.css), which moves the picker's anchor.
+window.addEventListener('scroll', () => positionPicker(), { passive: true });
 
 // ---- hover cards ---------------------------------------------------------------------------------
 
@@ -698,32 +716,72 @@ const MAX_LISTED_MONSTERS = 12;
 
 const card = el('div', 'hovercard');
 card.hidden = true;
-card.setAttribute('role', 'tooltip');
 document.body.append(card);
 let hoverTimer = 0;
 let hoverCell = null;
 
 function hideCard() {
   clearTimeout(hoverTimer);
+  hoverCell?.classList.remove('card-open');
   hoverCell = null;
   card.hidden = true;
 }
 
-spacer.addEventListener('mouseover', (e) => {
-  const cell = e.target.closest('.td');
-  if (cell === hoverCell) return;
-  hideCard();
+/** The details-bearing cell under `target`, with its card builder, or null. */
+function cardCell(target) {
+  const cell = target.closest?.('.td');
   const build = cell && HOVER_KINDS[[...cell.classList].find((c) => c in HOVER_KINDS)];
-  if (!build || !data || picker) return;
-  hoverCell = cell;
-  hoverTimer = setTimeout(() => {
-    const r = Number(cell.parentElement.dataset.r);
-    card.replaceChildren(...build(r));
-    card.hidden = false;
-    positionCard(cell);
-  }, HOVER_DELAY_MS);
+  return build && data && !picker ? { cell, build } : null;
+}
+
+/** Mouse: a tooltip next to the cell. Touch/pen (`sheet`): a dismissable bottom sheet. */
+function showCard(cell, build, sheet) {
+  const r = Number(cell.parentElement.dataset.r);
+  const content = build(r);
+  card.classList.toggle('sheet', sheet);
+  if (sheet) {
+    const close = el('button', 'hc-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close details');
+    close.addEventListener('click', hideCard);
+    content.unshift(close);
+    card.setAttribute('role', 'dialog');
+    card.setAttribute('aria-label', 'Details');
+    card.style.left = card.style.top = '';
+    cell.classList.add('card-open');
+  } else {
+    card.setAttribute('role', 'tooltip');
+    card.removeAttribute('aria-label');
+  }
+  card.replaceChildren(...content);
+  card.scrollTop = 0;
+  card.hidden = false;
+  if (!sheet) positionCard(cell);
+}
+
+spacer.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const hit = cardCell(e.target);
+  if (hit?.cell === hoverCell && hoverCell) return;
+  hideCard();
+  if (!hit) return;
+  hoverCell = hit.cell;
+  hoverTimer = setTimeout(() => showCard(hit.cell, hit.build, false), HOVER_DELAY_MS);
 });
-spacer.addEventListener('mouseleave', hideCard);
+spacer.addEventListener('pointerleave', (e) => {
+  if (e.pointerType === 'mouse') hideCard();
+});
+// Tap a monster, location or item to open its details; tap it again (or anything else) to close.
+spacer.addEventListener('click', (e) => {
+  if (lastPointer === 'mouse') return;
+  const hit = cardCell(e.target);
+  const same = hit && hit.cell === hoverCell;
+  hideCard();
+  if (hit && !same) {
+    hoverCell = hit.cell;
+    showCard(hit.cell, hit.build, true);
+  }
+});
 
 function positionCard(cell) {
   const rect = cell.getBoundingClientRect();
