@@ -27,16 +27,31 @@ pub fn hardcoded_boss_areas() -> HashMap<(&'static str, MonsterType), Vec<&'stat
         ("Act 1 - Tristram", &["griswold"]),
         ("Act 5 - World Stone", &["baalcrab"]),
         ("Act 5 - Temple 2", &["putriddefiler1"]),
-        ("Act 5 - Temple Boss", &["putriddefiler1", "putriddefiler2", "nihlathakboss"]),
-        ("Act 5 - Baal Temple 1", &["putriddefiler2", "putriddefiler3"]),
-        ("Act 5 - Baal Temple 3", &["putriddefiler3", "putriddefiler4", "putriddefiler5"]),
+        (
+            "Act 5 - Temple Boss",
+            &["putriddefiler1", "putriddefiler2", "nihlathakboss"],
+        ),
+        (
+            "Act 5 - Baal Temple 1",
+            &["putriddefiler2", "putriddefiler3"],
+        ),
+        (
+            "Act 5 - Baal Temple 3",
+            &["putriddefiler3", "putriddefiler4", "putriddefiler5"],
+        ),
     ];
     let mut result: HashMap<(&str, MonsterType), Vec<&str>> = HashMap::new();
     for (area, ids) in regular {
-        result.entry((area, MonsterType::Regular)).or_default().extend(ids.iter());
+        result
+            .entry((area, MonsterType::Regular))
+            .or_default()
+            .extend(ids.iter());
     }
     for (area, ids) in boss {
-        result.entry((area, MonsterType::Boss)).or_default().extend(ids.iter());
+        result
+            .entry((area, MonsterType::Boss))
+            .or_default()
+            .extend(ids.iter());
     }
     result
 }
@@ -105,7 +120,10 @@ pub fn hardcoded_superunique_areas() -> HashMap<&'static str, &'static str> {
     .collect()
 }
 
-pub fn load_superuniques(data: &str, areas_by_superunique_id: &HashMap<&str, &str>) -> Vec<SuperUnique> {
+pub fn load_superuniques(
+    data: &str,
+    areas_by_superunique_id: &HashMap<&str, &str>,
+) -> Vec<SuperUnique> {
     let rows = parse_tsv(data);
     let mut result = Vec::new();
     for row in &rows {
@@ -126,12 +144,36 @@ pub fn load_superuniques(data: &str, areas_by_superunique_id: &HashMap<&str, &st
                 treasure_classes.insert((difficulty, tc_type), value.trim().to_string());
             }
         };
-        add(Difficulty::Normal, TreasureClassType::Regular, get(row, "TC"));
-        add(Difficulty::Normal, TreasureClassType::DesecratedRegular, get(row, "TC Desecrated"));
-        add(Difficulty::Nightmare, TreasureClassType::Regular, get(row, "TC(N)"));
-        add(Difficulty::Nightmare, TreasureClassType::DesecratedRegular, get(row, "TC(N) Desecrated"));
-        add(Difficulty::Hell, TreasureClassType::Regular, get(row, "TC(H)"));
-        add(Difficulty::Hell, TreasureClassType::DesecratedRegular, get(row, "TC(H) Desecrated"));
+        add(
+            Difficulty::Normal,
+            TreasureClassType::Regular,
+            get(row, "TC"),
+        );
+        add(
+            Difficulty::Normal,
+            TreasureClassType::DesecratedRegular,
+            get(row, "TC Desecrated"),
+        );
+        add(
+            Difficulty::Nightmare,
+            TreasureClassType::Regular,
+            get(row, "TC(N)"),
+        );
+        add(
+            Difficulty::Nightmare,
+            TreasureClassType::DesecratedRegular,
+            get(row, "TC(N) Desecrated"),
+        );
+        add(
+            Difficulty::Hell,
+            TreasureClassType::Regular,
+            get(row, "TC(H)"),
+        );
+        add(
+            Difficulty::Hell,
+            TreasureClassType::DesecratedRegular,
+            get(row, "TC(H) Desecrated"),
+        );
 
         result.push(SuperUnique {
             id,

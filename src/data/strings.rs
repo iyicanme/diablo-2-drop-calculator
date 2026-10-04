@@ -15,6 +15,7 @@ fn strip_bom(data: &str) -> &str {
 }
 
 pub fn load_string_table(data: &str) -> HashMap<String, String> {
-    let entries: Vec<StringEntry> = serde_json::from_str(strip_bom(data)).expect("valid string-table json");
+    let entries: Vec<StringEntry> =
+        serde_json::from_str(strip_bom(data)).expect("valid string-table json");
     entries.into_iter().map(|e| (e.key, e.en_us)).collect()
 }

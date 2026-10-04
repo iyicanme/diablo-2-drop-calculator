@@ -83,7 +83,11 @@ impl Category {
 
 /// `chance_per_x` for a row (1/drop_chance) — "1 in X" is much easier to read than a tiny decimal.
 pub fn chance_per_x(row: &DropRow) -> Option<f64> {
-    if row.drop_chance > 0.0 { Some(1.0 / row.drop_chance) } else { None }
+    if row.drop_chance > 0.0 {
+        Some(1.0 / row.drop_chance)
+    } else {
+        None
+    }
 }
 
 pub fn write_csvs_by_category(
@@ -92,7 +96,8 @@ pub fn write_csvs_by_category(
     max_chance_per_x: Option<f64>,
 ) -> Result<Vec<(&'static str, usize)>> {
     std::fs::create_dir_all(output_dir)?;
-    let mut groups: std::collections::BTreeMap<Category, Vec<&DropRow>> = std::collections::BTreeMap::new();
+    let mut groups: std::collections::BTreeMap<Category, Vec<&DropRow>> =
+        std::collections::BTreeMap::new();
     for row in rows {
         if let Some(max) = max_chance_per_x {
             if chance_per_x(row).is_none_or(|x| x > max) {
@@ -116,7 +121,9 @@ pub fn write_csvs_by_category(
 }
 
 fn write_row(wtr: &mut csv::Writer<std::fs::File>, row: &DropRow) -> Result<()> {
-    let chance_per_x_str = chance_per_x(row).map(|x| format!("{x:.1}")).unwrap_or_default();
+    let chance_per_x_str = chance_per_x(row)
+        .map(|x| format!("{x:.1}"))
+        .unwrap_or_default();
     wtr.write_record([
         row.monster_name.as_str(),
         row.monster_type,

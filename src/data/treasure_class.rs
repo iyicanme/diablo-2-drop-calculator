@@ -72,13 +72,19 @@ impl TreasureClassLibrary {
         let mut by_group: HashMap<i32, Vec<(i32, String)>> = HashMap::new();
         for row in &rows {
             if let (Some(group), Some(level)) = (row.group, row.level) {
-                by_group.entry(group).or_default().push((level, row.name.clone()));
+                by_group
+                    .entry(group)
+                    .or_default()
+                    .push((level, row.name.clone()));
             }
         }
         for names in by_group.values_mut() {
             names.sort_by_key(|(level, _)| *level);
         }
-        let by_group = by_group.into_iter().map(|(g, v)| (g, v.into_iter().map(|(_, n)| n).collect())).collect();
+        let by_group = by_group
+            .into_iter()
+            .map(|(g, v)| (g, v.into_iter().map(|(_, n)| n).collect()))
+            .collect();
         let by_name = rows.into_iter().map(|r| (r.name.clone(), r)).collect();
         TreasureClassLibrary { by_name, by_group }
     }
@@ -102,7 +108,11 @@ impl TreasureClassLibrary {
         let mut next_index = base_index + 1;
         while next_index < ladder.len() {
             let next_name = &ladder[next_index];
-            let next_level = self.by_name.get(next_name).and_then(|r| r.level).unwrap_or(i32::MAX);
+            let next_level = self
+                .by_name
+                .get(next_name)
+                .and_then(|r| r.level)
+                .unwrap_or(i32::MAX);
             if next_level > target_level {
                 break;
             }

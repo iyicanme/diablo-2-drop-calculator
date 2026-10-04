@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
-csv = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-anyhow = "1"
+anyhow = { version = "1", default-features = false, features = [] }
+clap = { version = "4", default-features = false, features = ["derive", "std"] }
+csv = { version = "1", default-features = false, features = [] }
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]

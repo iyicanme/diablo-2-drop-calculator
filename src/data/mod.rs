@@ -4,16 +4,16 @@ pub mod monsters;
 pub mod props;
 pub mod raw;
 pub mod strings;
-pub mod superuniques;
-pub mod treasureclass;
+pub mod super_uniques;
+pub mod treasure_class;
 
+use crate::model::Difficulty;
 use items::ItemDatabase;
 use levels::Area;
 use monsters::MonsterClass;
 use std::collections::HashMap;
-use crate::model::Difficulty;
-use superuniques::SuperUnique;
-use treasureclass::TreasureClassLibrary;
+use super_uniques::SuperUnique;
+use treasure_class::TreasureClassLibrary;
 
 const MONSTATS_TXT: &str = include_str!("../../data/monstats.txt");
 const LEVELS_TXT: &str = include_str!("../../data/levels.txt");
@@ -59,16 +59,26 @@ pub struct MonsterLevelTable {
 impl MonsterLevelTable {
     pub fn load(data: &str) -> Self {
         let rows: HashMap<String, serde_json::Value> =
-            serde_json::from_str(data.strip_prefix('\u{FEFF}').unwrap_or(data)).expect("monlvl.json");
-        let mut by_level: Vec<(i64, &serde_json::Value)> =
-            rows.values().filter_map(|r| Some((r.get("Level")?.as_i64()?, r))).collect();
+            serde_json::from_str(data.strip_prefix('\u{FEFF}').unwrap_or(data))
+                .expect("monlvl.json");
+        let mut by_level: Vec<(i64, &serde_json::Value)> = rows
+            .values()
+            .filter_map(|r| Some((r.get("Level")?.as_i64()?, r)))
+            .collect();
         by_level.sort_by_key(|(level, _)| *level);
         let column = |name: &str| -> Vec<i64> {
-            by_level.iter().map(|(_, r)| r.get(name).and_then(|v| v.as_i64()).unwrap_or(0)).collect()
+            by_level
+                .iter()
+                .map(|(_, r)| r.get(name).and_then(|v| v.as_i64()).unwrap_or(0))
+                .collect()
         };
         let mut hp = HashMap::new();
         let mut xp = HashMap::new();
-        for (difficulty, suffix) in [(Difficulty::Normal, ""), (Difficulty::Nightmare, "(N)"), (Difficulty::Hell, "(H)")] {
+        for (difficulty, suffix) in [
+            (Difficulty::Normal, ""),
+            (Difficulty::Nightmare, "(N)"),
+            (Difficulty::Hell, "(H)"),
+        ] {
             hp.insert(difficulty, column(&format!("L-HP{suffix}")));
             xp.insert(difficulty, column(&format!("L-XP{suffix}")));
         }
@@ -97,23 +107,27 @@ fn load_socket_bonuses(data: &str) -> HashMap<String, Vec<(&'static str, Vec<ite
     gems.values()
         .filter_map(|g| {
             let code = g.get("code")?.as_str()?.to_string();
-            let slots = [("weapon", "Weapons"), ("helm", "Armor and helms"), ("shield", "Shields")]
-                .into_iter()
-                .map(|(key, label)| {
-                    let props = (1..=3)
-                        .filter_map(|n| {
-                            let prop = text(g.get(&format!("{key}Mod{n}Code")));
-                            (!prop.is_empty()).then(|| items::RawProp {
-                                code: prop,
-                                par: text(g.get(&format!("{key}Mod{n}Param"))),
-                                min: text(g.get(&format!("{key}Mod{n}Min"))),
-                                max: text(g.get(&format!("{key}Mod{n}Max"))),
-                            })
+            let slots = [
+                ("weapon", "Weapons"),
+                ("helm", "Armor and helms"),
+                ("shield", "Shields"),
+            ]
+            .into_iter()
+            .map(|(key, label)| {
+                let props = (1..=3)
+                    .filter_map(|n| {
+                        let prop = text(g.get(&format!("{key}Mod{n}Code")));
+                        (!prop.is_empty()).then(|| items::RawProp {
+                            code: prop,
+                            par: text(g.get(&format!("{key}Mod{n}Param"))),
+                            min: text(g.get(&format!("{key}Mod{n}Min"))),
+                            max: text(g.get(&format!("{key}Mod{n}Max"))),
                         })
-                        .collect();
-                    (label, props)
-                })
-                .collect();
+                    })
+                    .collect();
+                (label, props)
+            })
+            .collect();
             Some((code, slots))
         })
         .collect()
@@ -123,7 +137,12 @@ impl DisplayData {
     pub fn load() -> Self {
         DisplayData {
             monster_levels: MonsterLevelTable::load(MONLVL_JSON),
-            props: props::PropRenderer::load(PROPERTIES_JSON, SKILLS_JSON, SKILLDESC_JSON, LOCALESTRINGS_ENG_JSON),
+            props: props::PropRenderer::load(
+                PROPERTIES_JSON,
+                SKILLS_JSON,
+                SKILLDESC_JSON,
+                LOCALESTRINGS_ENG_JSON,
+            ),
             socket_bonuses: load_socket_bonuses(GEMS_JSON),
         }
     }
@@ -132,10 +151,11 @@ impl DisplayData {
 impl GameData {
     pub fn load() -> Self {
         let monster_classes = monsters::load_monster_classes(MONSTATS_TXT);
-        let hardcoded_boss_areas = superuniques::hardcoded_boss_areas();
+        let hardcoded_boss_areas = super_uniques::hardcoded_boss_areas();
         let mut areas = levels::load_areas(LEVELS_TXT, &hardcoded_boss_areas);
-        let hardcoded_superunique_areas = superuniques::hardcoded_superunique_areas();
-        let mut superuniques = superuniques::load_superuniques(SUPERUNIQUES_TXT, &hardcoded_superunique_areas);
+        let hardcoded_superunique_areas = super_uniques::hardcoded_superunique_areas();
+        let mut superuniques =
+            super_uniques::load_superuniques(SUPERUNIQUES_TXT, &hardcoded_superunique_areas);
         let treasure_classes = TreasureClassLibrary::load(TREASURECLASSEX_TXT);
 
         let mut item_names = strings::load_string_table(ITEM_NAMES_JSON);
@@ -167,10 +187,20 @@ impl GameData {
             }
         }
 
-        GameData { monster_classes, areas, superuniques, treasure_classes, items, monster_names }
+        GameData {
+            monster_classes,
+            areas,
+            superuniques,
+            treasure_classes,
+            items,
+            monster_names,
+        }
     }
 
     pub fn monster_display_name(&self, name_str: &str) -> String {
-        self.monster_names.get(name_str).cloned().unwrap_or_else(|| name_str.to_string())
+        self.monster_names
+            .get(name_str)
+            .cloned()
+            .unwrap_or_else(|| name_str.to_string())
     }
 }

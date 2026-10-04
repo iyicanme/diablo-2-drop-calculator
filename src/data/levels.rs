@@ -15,14 +15,23 @@ pub struct Area {
 }
 
 fn read_mons(row: &super::raw::Row, prefix: &str) -> HashSet<String> {
-    (1..=25).filter_map(|i| {
-        let v = get(row, &format!("{prefix}{i}")).trim();
-        if v.is_empty() { None } else { Some(v.to_string()) }
-    }).collect()
+    (1..=25)
+        .filter_map(|i| {
+            let v = get(row, &format!("{prefix}{i}")).trim();
+            if v.is_empty() {
+                None
+            } else {
+                Some(v.to_string())
+            }
+        })
+        .collect()
 }
 
-const PANDEMONIUM_AREAS: [&str; 3] =
-    ["Act 5 - Pandemonium 1", "Act 5 - Pandemonium 2", "Act 5 - Pandemonium 3"];
+const PANDEMONIUM_AREAS: [&str; 3] = [
+    "Act 5 - Pandemonium 1",
+    "Act 5 - Pandemonium 2",
+    "Act 5 - Pandemonium 3",
+];
 
 pub fn load_areas(
     data: &str,
@@ -60,7 +69,8 @@ pub fn load_areas(
                 .unwrap_or_default()
         };
 
-        let mut monster_class_ids: HashMap<(Difficulty, MonsterType), HashSet<String>> = HashMap::new();
+        let mut monster_class_ids: HashMap<(Difficulty, MonsterType), HashSet<String>> =
+            HashMap::new();
         let mut put = |difficulty: Difficulty, mt: MonsterType, ids: HashSet<String>| {
             if !ids.is_empty() {
                 monster_class_ids.insert((difficulty, mt), ids);
@@ -68,19 +78,67 @@ pub fn load_areas(
         };
 
         if !PANDEMONIUM_AREAS.contains(&id.as_str()) {
-            put(Difficulty::Normal, MonsterType::Regular, &mons | &hardcoded_for(MonsterType::Regular));
-            put(Difficulty::Normal, MonsterType::Champion, &umons | &hardcoded_for(MonsterType::Champion));
-            put(Difficulty::Normal, MonsterType::Unique, &umons | &hardcoded_for(MonsterType::Unique));
-            put(Difficulty::Normal, MonsterType::Boss, hardcoded_for(MonsterType::Boss));
-            put(Difficulty::Nightmare, MonsterType::Regular, &nmons | &hardcoded_for(MonsterType::Regular));
-            put(Difficulty::Nightmare, MonsterType::Champion, &nmons | &hardcoded_for(MonsterType::Champion));
-            put(Difficulty::Nightmare, MonsterType::Unique, &nmons | &hardcoded_for(MonsterType::Unique));
-            put(Difficulty::Nightmare, MonsterType::Boss, hardcoded_for(MonsterType::Boss));
+            put(
+                Difficulty::Normal,
+                MonsterType::Regular,
+                &mons | &hardcoded_for(MonsterType::Regular),
+            );
+            put(
+                Difficulty::Normal,
+                MonsterType::Champion,
+                &umons | &hardcoded_for(MonsterType::Champion),
+            );
+            put(
+                Difficulty::Normal,
+                MonsterType::Unique,
+                &umons | &hardcoded_for(MonsterType::Unique),
+            );
+            put(
+                Difficulty::Normal,
+                MonsterType::Boss,
+                hardcoded_for(MonsterType::Boss),
+            );
+            put(
+                Difficulty::Nightmare,
+                MonsterType::Regular,
+                &nmons | &hardcoded_for(MonsterType::Regular),
+            );
+            put(
+                Difficulty::Nightmare,
+                MonsterType::Champion,
+                &nmons | &hardcoded_for(MonsterType::Champion),
+            );
+            put(
+                Difficulty::Nightmare,
+                MonsterType::Unique,
+                &nmons | &hardcoded_for(MonsterType::Unique),
+            );
+            put(
+                Difficulty::Nightmare,
+                MonsterType::Boss,
+                hardcoded_for(MonsterType::Boss),
+            );
         }
-        put(Difficulty::Hell, MonsterType::Regular, &nmons | &hardcoded_for(MonsterType::Regular));
-        put(Difficulty::Hell, MonsterType::Champion, &nmons | &hardcoded_for(MonsterType::Champion));
-        put(Difficulty::Hell, MonsterType::Unique, &nmons | &hardcoded_for(MonsterType::Unique));
-        put(Difficulty::Hell, MonsterType::Boss, hardcoded_for(MonsterType::Boss));
+        put(
+            Difficulty::Hell,
+            MonsterType::Regular,
+            &nmons | &hardcoded_for(MonsterType::Regular),
+        );
+        put(
+            Difficulty::Hell,
+            MonsterType::Champion,
+            &nmons | &hardcoded_for(MonsterType::Champion),
+        );
+        put(
+            Difficulty::Hell,
+            MonsterType::Unique,
+            &nmons | &hardcoded_for(MonsterType::Unique),
+        );
+        put(
+            Difficulty::Hell,
+            MonsterType::Boss,
+            hardcoded_for(MonsterType::Boss),
+        );
 
         let unique_packs = [
             (Difficulty::Normal, "MonUMin", "MonUMax"),
@@ -91,7 +149,17 @@ pub fn load_areas(
         .filter_map(|(d, min, max)| Some((d, (get_i32(row, min)?, get_i32(row, max)?))))
         .collect();
 
-        result.insert(id.clone(), Area { id, display_name, act, monster_levels, monster_class_ids, unique_packs });
+        result.insert(
+            id.clone(),
+            Area {
+                id,
+                display_name,
+                act,
+                monster_levels,
+                monster_class_ids,
+                unique_packs,
+            },
+        );
     }
     result
 }

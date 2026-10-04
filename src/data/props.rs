@@ -86,18 +86,33 @@ fn decimal(v: f64) -> String {
 }
 
 impl PropRenderer {
-    pub fn load(properties_json: &str, skills_json: &str, skilldesc_json: &str, strings_json: &str) -> Self {
-        let properties: HashMap<String, Value> = serde_json::from_str(strip_bom(properties_json)).expect("properties.json");
-        let skills: HashMap<String, Value> = serde_json::from_str(strip_bom(skills_json)).expect("skills.json");
-        let skilldesc: HashMap<String, Value> = serde_json::from_str(strip_bom(skilldesc_json)).expect("skilldesc.json");
-        let strings: HashMap<String, String> = serde_json::from_str(strip_bom(strings_json)).expect("localestrings-eng.json");
+    pub fn load(
+        properties_json: &str,
+        skills_json: &str,
+        skilldesc_json: &str,
+        strings_json: &str,
+    ) -> Self {
+        let properties: HashMap<String, Value> =
+            serde_json::from_str(strip_bom(properties_json)).expect("properties.json");
+        let skills: HashMap<String, Value> =
+            serde_json::from_str(strip_bom(skills_json)).expect("skills.json");
+        let skilldesc: HashMap<String, Value> =
+            serde_json::from_str(strip_bom(skilldesc_json)).expect("skilldesc.json");
+        let strings: HashMap<String, String> =
+            serde_json::from_str(strip_bom(strings_json)).expect("localestrings-eng.json");
 
         let templates = properties
             .values()
             .filter_map(|p| {
                 let code = p.get("code")?.as_str()?;
                 let tooltip = p.get("*Tooltip")?.as_str()?;
-                Some((code.to_string(), (p.get("func1").and_then(Value::as_i64).unwrap_or(1), tooltip.to_string())))
+                Some((
+                    code.to_string(),
+                    (
+                        p.get("func1").and_then(Value::as_i64).unwrap_or(1),
+                        tooltip.to_string(),
+                    ),
+                ))
             })
             .collect();
 
@@ -108,7 +123,10 @@ impl PropRenderer {
         let mut skills_by_id = HashMap::new();
         let mut skill_ids_by_name = HashMap::new();
         for s in skills.values() {
-            let (Some(id), Some(raw)) = (s.get("*Id").and_then(Value::as_i64), s.get("skill").and_then(Value::as_str)) else {
+            let (Some(id), Some(raw)) = (
+                s.get("*Id").and_then(Value::as_i64),
+                s.get("skill").and_then(Value::as_str),
+            ) else {
                 continue;
             };
             let name = s
@@ -118,14 +136,20 @@ impl PropRenderer {
                 .and_then(|k| strings.get(*k))
                 .cloned()
                 .unwrap_or_else(|| raw.to_string());
-            let class = s
-                .get("charclass")
-                .and_then(Value::as_str)
-                .and_then(|c| CLASS_NAMES.iter().find(|(code, _)| *code == c).map(|(_, n)| *n));
+            let class = s.get("charclass").and_then(Value::as_str).and_then(|c| {
+                CLASS_NAMES
+                    .iter()
+                    .find(|(code, _)| *code == c)
+                    .map(|(_, n)| *n)
+            });
             skill_ids_by_name.insert(raw.to_lowercase(), id);
             skills_by_id.insert(id, Skill { name, class });
         }
-        PropRenderer { templates, skills_by_id, skill_ids_by_name }
+        PropRenderer {
+            templates,
+            skills_by_id,
+            skill_ids_by_name,
+        }
     }
 
     fn skill(&self, par: &str) -> Option<&Skill> {
@@ -148,16 +172,31 @@ impl PropRenderer {
         // Properties whose template is missing, wrong (pierce-mag says "Fire") or doesn't fit the
         // parameter layout.
         // A range after a sign reads better in parentheses: "-(10-20)%".
-        let signed = value.as_ref().map(|v| if v.contains('-') { format!("({v})") } else { v.clone() });
+        let signed = value.as_ref().map(|v| {
+            if v.contains('-') {
+                format!("({v})")
+            } else {
+                v.clone()
+            }
+        });
         match p.code.as_str() {
             "res-all-max" => return Some(format!("+{}% to All Maximum Resistances", signed?)),
             "dur" => return Some(format!("+{} Maximum Durability", signed?)),
             "pierce-mag" => return Some(format!("-{}% to Enemy Magic Resistance", signed?)),
             // par = repair speed: 1 durability every 100/par seconds.
-            "rep-dur" => return Some(format!("Repairs 1 Durability in {} Seconds", decimal(100.0 / par.filter(|v| *v > 0)? as f64))),
-            "randclassskill" => return Some("+ to Random Class Skill Levels (class rolled on drop)".to_string()),
+            "rep-dur" => {
+                return Some(format!(
+                    "Repairs 1 Durability in {} Seconds",
+                    decimal(100.0 / par.filter(|v| *v > 0)? as f64)
+                ));
+            }
+            "randclassskill" => {
+                return Some("+ to Random Class Skill Levels (class rolled on drop)".to_string());
+            }
             "skill-rand" => {
-                let class = min.and_then(|id| self.skills_by_id.get(&id)).and_then(|s| s.class);
+                let class = min
+                    .and_then(|id| self.skills_by_id.get(&id))
+                    .and_then(|s| s.class);
                 return Some(match class {
                     Some(c) => format!("+{} to a Random {c} Skill", par?),
                     None => format!("+{} to a Random Skill", par?),
@@ -165,22 +204,40 @@ impl PropRenderer {
             }
             "skilltab" => {
                 let tab = par.filter(|t| (0..21).contains(t))? as usize;
-                return Some(format!("+{} to {} ({} only)", signed?, SKILL_TABS[tab], CLASS_NAMES[tab / 3].1));
+                return Some(format!(
+                    "+{} to {} ({} only)",
+                    signed?,
+                    SKILL_TABS[tab],
+                    CLASS_NAMES[tab / 3].1
+                ));
             }
             _ => {}
         }
 
         let Some((func, template)) = self.templates.get(&p.code) else {
-            return Some(format!("{} {}", p.code, value.or(Some(p.par.clone())).unwrap_or_default()).trim().to_string());
+            return Some(
+                format!(
+                    "{} {}",
+                    p.code,
+                    value.or(Some(p.par.clone())).unwrap_or_default()
+                )
+                .trim()
+                .to_string(),
+            );
         };
         let skill = self.skill(&p.par);
-        let skill_name = skill.map(|s| s.name.clone()).unwrap_or_else(|| p.par.clone());
+        let skill_name = skill
+            .map(|s| s.name.clone())
+            .unwrap_or_else(|| p.par.clone());
 
         // Values for the template's `#` placeholders, in order.
         let mut text = template.clone();
         let values: Vec<String> = match func {
             // Chance-to-cast: min = chance (0 means the default 5%), max = skill level.
-            11 => vec![min.filter(|c| *c > 0).unwrap_or(5).to_string(), max.unwrap_or(1).to_string()],
+            11 => vec![
+                min.filter(|c| *c > 0).unwrap_or(5).to_string(),
+                max.unwrap_or(1).to_string(),
+            ],
             // Charges: max = skill level, min = charges.
             19 => {
                 let charges = min.unwrap_or(0).to_string();
@@ -204,7 +261,10 @@ impl PropRenderer {
                 }
             }
             // Per character level: par is in 8ths per level.
-            17 => vec![format!("({} per Level)", decimal(par.unwrap_or(0) as f64 / 8.0))],
+            17 => vec![format!(
+                "({} per Level)",
+                decimal(par.unwrap_or(0) as f64 / 8.0)
+            )],
             _ => vec![value.clone().unwrap_or_default()],
         };
 

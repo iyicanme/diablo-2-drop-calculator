@@ -1,6 +1,6 @@
 use anyhow::Result;
-use drop_calc::{data, export, pipeline};
 use clap::Parser;
+use drop_calc::{data, export, pipeline};
 use std::path::PathBuf;
 
 /// D2R drop calculator: dumps every possible monster drop, across all difficulties, to a CSV you can
@@ -50,10 +50,17 @@ fn main() -> Result<()> {
         character_level: args.character_level,
     };
 
-    eprintln!("Computing drop tables (players={}, magic_find={}, character_level={})...", config.players, config.magic_find, config.character_level);
+    eprintln!(
+        "Computing drop tables (players={}, magic_find={}, character_level={})...",
+        config.players, config.magic_find, config.character_level
+    );
     let rows = pipeline::generate(&game_data, &config);
 
-    eprintln!("Writing {} rows to {}/...", rows.len(), args.output_dir.display());
+    eprintln!(
+        "Writing {} rows to {}/...",
+        rows.len(),
+        args.output_dir.display()
+    );
     let summary = export::write_csvs_by_category(&args.output_dir, &rows, args.max_chance_per_x)?;
     for (file_name, count) in &summary {
         eprintln!("  {file_name}: {count} rows");

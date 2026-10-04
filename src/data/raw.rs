@@ -10,7 +10,12 @@ pub fn parse_tsv(data: &str) -> Vec<Row> {
         .flexible(true)
         .has_headers(true)
         .from_reader(data.as_bytes());
-    let headers: Vec<String> = rdr.headers().unwrap().iter().map(|s| s.to_string()).collect();
+    let headers: Vec<String> = rdr
+        .headers()
+        .unwrap()
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
     rdr.records()
         .filter_map(|r| r.ok())
         .map(|record| {

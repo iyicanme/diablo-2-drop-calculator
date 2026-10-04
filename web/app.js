@@ -56,7 +56,8 @@ const el = (tag, cls, text) => {
 let data = null; // { rows, columns, dictionary, dictRank, elapsed, inputs }
 let tab = 2;
 let sort = { id: null, dir: 1 }; // dir 1 asc, -1 desc
-// text: { text, selected: Set<dict index> | null }, enum/flag: string ('' = all), max: string
+// text: { text, selected }, enum/flag: { selected }, max: string. `selected` is a Set of dict
+// indices (act number, flag bit for flag columns), or null for no restriction.
 const filters = {};
 let excludedImmunities = 0; // bitmask over `flags`; rows with any of these bits are hidden
 let statFilter = ''; // text searched in item stat lines, set bonuses and rune/gem socket bonuses
@@ -64,7 +65,7 @@ let view = new Uint32Array(0);
 let viewBuf = new Uint32Array(0);
 let categoryCounts = [0, 0, 0];
 const permCache = new Map();
-const optionCache = new Map(); // `${column}:${tab}` -> dict indices present in that tab
+const optionCache = new Map(); // `${column}:${tab}` -> [value, label] pairs present in that tab
 
 // ---- inputs & worker -----------------------------------------------------------------------------
 
@@ -136,6 +137,7 @@ worker.onmessage = ({ data: msg }) => {
   for (const c of msg.columns.category) categoryTotals[c]++;
   // Lowercased stat lines per item for the item-stats filter. Plain base items have none.
   const itemStats = msg.details.items.map((it) => statLines(it).join('\n').toLowerCase());
+  if (data) remapSelections(data.dictionary, msg.dictionary);
   data = { ...msg, dictRank, categoryTotals, itemStats, inputs: worker.inputs };
   permCache.clear();
   optionCache.clear();
@@ -150,6 +152,17 @@ worker.onerror = (e) => {
   setBusy(false);
   setStatus(`Error: ${e.message || 'failed to load the calculator (serve this folder over http, not file://)'}`, true);
 };
+
+/** Dictionary indices change between runs, so carry picked string values over by text. */
+function remapSelections(oldDict, newDict) {
+  const index = new Map(newDict.map((s, d) => [s, d]));
+  for (const c of COLUMNS) {
+    const f = filters[c.id];
+    if (!f?.selected || !STRING_COLUMN_IDS.has(c.id)) continue;
+    const next = [...f.selected].map((d) => index.get(oldDict[d])).filter((d) => d != null);
+    f.selected = next.length ? new Set(next) : null;
+  }
+}
 
 function setBusy(busy, message) {
   $('#run').disabled = busy;
@@ -219,16 +232,12 @@ function buildFilterRow() {
       cell.classList.add('with-pick');
       cell.append(input, button);
     } else if (c.type === 'enum' || c.type === 'flag') {
-      const select = el('select', 'finput');
-      select.append(new Option('All', ''));
-      for (const [value, label] of enumOptions(c)) select.append(new Option(label, value));
-      select.value = filters[c.id] || '';
-      if (select.value !== (filters[c.id] || '')) filters[c.id] = '';
-      select.addEventListener('change', () => {
-        filters[c.id] = select.value;
-        refresh();
-      });
-      cell.append(select);
+      const button = el('button', 'pick finput wide');
+      button.type = 'button';
+      button.title = `Choose ${c.label.toLowerCase()} values`;
+      button.dataset.id = c.id;
+      button.addEventListener('click', () => (picker?.id === c.id ? closePicker() : openPicker(c, cell)));
+      cell.append(button);
     } else {
       const input = el('input', 'finput');
       input.type = 'number';
@@ -246,16 +255,30 @@ function buildFilterRow() {
     }
     filterRow.append(cell);
   }
-  for (const c of COLUMNS) if (c.type === 'text') updatePickButton(c.id);
+  for (const c of COLUMNS) if (c.type !== 'max') updatePickButton(c);
 }
 
-function enumOptions(c) {
-  if (c.type === 'flag') return [['1', 'yes'], ['0', 'no']];
-  if (c.id === 'act') {
-    const seen = new Set(data.columns.act);
-    return [...seen].sort((a, b) => a - b).map((a) => [String(a), String(a)]);
-  }
-  return distinctValues(c.id, -1).map((d) => [String(d), data.dictionary[d]]);
+/** [value, label] pairs a column's picker offers in the current tab. */
+function pickerOptions(c) {
+  const key = `${c.id}:${tab}`;
+  let options = optionCache.get(key);
+  if (options) return options;
+  if (c.type === 'flag') options = [[1, 'yes'], [0, 'no']];
+  else if (c.id === 'act') {
+    const { act, category } = data.columns;
+    const seen = new Set();
+    for (let r = 0; r < act.length; r++) if (tab === -1 || category[r] === tab) seen.add(act[r]);
+    options = [...seen].sort((a, b) => a - b).map((a) => [a, String(a)]);
+  } else options = distinctValues(c.id, tab).map((d) => [d, data.dictionary[d]]);
+  optionCache.set(key, options);
+  return options;
+}
+
+/** Label of a picked value, for the filter button. */
+function pickedLabel(c, v) {
+  if (c.type === 'flag') return v ? 'yes' : 'no';
+  if (c.id === 'act') return String(v);
+  return data.dictionary[v];
 }
 
 /** Dictionary indices occurring in string column `id` (only in category `inTab` unless -1), sorted. */
@@ -270,26 +293,30 @@ function distinctValues(id, inTab) {
 }
 
 const textFilter = (id) => (filters[id] ||= { text: '', selected: null });
+const pickFilter = (c) => (c.type === 'text' ? textFilter(c.id) : (filters[c.id] ||= { selected: null }));
 
-// ---- checkbox-list picker for text columns -------------------------------------------------------
+// ---- checkbox-list picker ------------------------------------------------------------------------
 
 let picker = null; // { id, el, anchor }
 
-function updatePickButton(id) {
-  const button = filterRow.querySelector(`.pick[data-id="${id}"]`);
+function updatePickButton(c) {
+  const button = filterRow.querySelector(`.pick[data-id="${c.id}"]`);
   if (!button) return;
-  const n = filters[id]?.selected?.size || 0;
-  button.textContent = n ? `▾ ${fmtInt.format(n)}` : '▾';
+  const selected = filters[c.id]?.selected;
+  const n = selected?.size || 0;
+  if (c.type === 'text') button.textContent = n ? `▾ ${fmtInt.format(n)}` : '▾';
+  else {
+    const text = !n ? 'All' : n === 1 ? pickedLabel(c, [...selected][0]) : `${fmtInt.format(n)} selected`;
+    button.replaceChildren(el('span', 'pick-text', text), el('span', 'pick-caret', '▾'));
+  }
   button.classList.toggle('active', n > 0);
-  button.setAttribute('aria-expanded', String(picker?.id === id));
+  button.setAttribute('aria-expanded', String(picker?.id === c.id));
 }
 
 function openPicker(c, anchor) {
   closePicker();
-  const f = textFilter(c.id);
-  const { dictionary } = data;
-  let values = optionCache.get(`${c.id}:${tab}`);
-  if (!values) optionCache.set(`${c.id}:${tab}`, (values = distinctValues(c.id, tab)));
+  const f = pickFilter(c);
+  const values = pickerOptions(c);
 
   const pop = el('div', 'picker');
   pop.setAttribute('role', 'dialog');
@@ -304,20 +331,20 @@ function openPicker(c, anchor) {
   actions.append(selectAll, clear);
   const list = el('div', 'picker-list');
 
-  const entries = values.map((d) => {
+  const entries = values.map(([d, text]) => {
     const label = el('label', 'picker-item');
     const box = el('input');
     box.type = 'checkbox';
     box.checked = !!f.selected?.has(d);
     box.dataset.d = d;
-    label.append(box, el('span', null, dictionary[d]));
-    return { d, label, box, lower: dictionary[d].toLowerCase() };
+    label.append(box, el('span', null, text));
+    return { d, label, box, lower: text.toLowerCase() };
   });
   list.append(...entries.map((e) => e.label));
 
   const changed = () => {
     if (f.selected && !f.selected.size) f.selected = null;
-    updatePickButton(c.id);
+    updatePickButton(c);
     refreshSoon();
   };
   list.addEventListener('change', (e) => {
@@ -345,13 +372,15 @@ function openPicker(c, anchor) {
     changed();
   });
 
-  pop.append(search, actions, list);
+  // Short lists need no search box.
+  if (values.length > 12) pop.append(search);
+  pop.append(actions, list);
   document.body.append(pop);
   picker = { id: c.id, el: pop, anchor };
   positionPicker();
-  updatePickButton(c.id);
+  updatePickButton(c);
   // Focusing on touch would pop the on-screen keyboard over the list.
-  if (lastPointer === 'mouse') search.focus();
+  if (lastPointer === 'mouse' && search.isConnected) search.focus();
 }
 
 function positionPicker() {
@@ -369,7 +398,7 @@ function closePicker() {
   const { id } = picker;
   picker.el.remove();
   picker = null;
-  updatePickButton(id);
+  updatePickButton(COLUMNS.find((c) => c.id === id));
 }
 
 // Last pointer type seen: hover cards follow the mouse, but open on tap for touch and pen.
@@ -433,16 +462,17 @@ function buildTests() {
       const col = columns[c.id];
       tests.push((r) => mask[col[r]] === 1);
     } else if (c.type === 'enum') {
-      if (!f) continue;
-      const v = Number(f);
-      const col = c.id === 'act' ? columns.act : columns[c.id];
-      tests.push((r) => col[r] === v);
+      if (!f?.selected) continue;
+      const col = columns[c.id];
+      const mask = new Uint8Array(c.id === 'act' ? 256 : dictionary.length);
+      for (const v of f.selected) mask[v] = 1;
+      tests.push((r) => mask[col[r]] === 1);
     } else if (c.type === 'flag') {
-      if (!f) continue;
-      const want = Number(f);
+      if (!f?.selected) continue;
       const flags = columns.flags;
       const bit = c.bit;
-      tests.push((r) => ((flags[r] >> bit) & 1) === want);
+      const sel = f.selected;
+      tests.push((r) => sel.has((flags[r] >> bit) & 1));
     } else if (c.type === 'max') {
       const max = num(f);
       if (max == null || !(max > 0)) continue;

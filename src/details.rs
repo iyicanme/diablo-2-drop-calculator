@@ -4,7 +4,7 @@
 use crate::data::items::{BaseItem, NamedItem};
 use crate::data::{DisplayData, GameData};
 use crate::model::{Difficulty, MonsterType};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 use std::collections::{BTreeSet, HashMap};
 
 fn per_difficulty(mut f: impl FnMut(Difficulty) -> Option<Value>) -> Value {
@@ -25,7 +25,9 @@ fn monster(game_data: &GameData, key: &str) -> Value {
         },
         None => (String::new(), key, false),
     };
-    let Some(class) = game_data.monster_classes.get(class_id) else { return Value::Null };
+    let Some(class) = game_data.monster_classes.get(class_id) else {
+        return Value::Null;
+    };
     let class_name = game_data.monster_display_name(&class.name_str);
     json!({
         "name": if superunique { name } else { class_name.clone() },
@@ -48,9 +50,15 @@ fn monster(game_data: &GameData, key: &str) -> Value {
 }
 
 fn area(game_data: &GameData, id: &str) -> Value {
-    let Some(area) = game_data.areas.get(id) else { return Value::Null };
-    let superuniques: Vec<&str> =
-        game_data.superuniques.iter().filter(|s| s.area_id == id).map(|s| s.name.as_str()).collect();
+    let Some(area) = game_data.areas.get(id) else {
+        return Value::Null;
+    };
+    let superuniques: Vec<&str> = game_data
+        .superuniques
+        .iter()
+        .filter(|s| s.area_id == id)
+        .map(|s| s.name.as_str())
+        .collect();
     json!({
         "name": area.display_name,
         "act": area.act,
@@ -72,7 +80,10 @@ fn area(game_data: &GameData, id: &str) -> Value {
 fn base_stats(game_data: &GameData, base: &BaseItem) -> Map<String, Value> {
     let s = &base.stats;
     let mut out = Map::new();
-    out.insert("base".into(), json!(game_data.items.base_item_display_name(base)));
+    out.insert(
+        "base".into(),
+        json!(game_data.items.base_item_display_name(base)),
+    );
     out.insert("type".into(), json!(base.item_type_display));
     out.insert("tier".into(), json!(base.tier.label()));
     out.insert("qlvl".into(), json!(base.level));
@@ -92,10 +103,17 @@ fn base_stats(game_data: &GameData, base: &BaseItem) -> Map<String, Value> {
     out
 }
 
-fn item(game_data: &GameData, display: &DisplayData, named: &HashMap<&str, (&NamedItem, &str)>, key: &str) -> Value {
+fn item(
+    game_data: &GameData,
+    display: &DisplayData,
+    named: &HashMap<&str, (&NamedItem, &str)>,
+    key: &str,
+) -> Value {
     let items = &game_data.items;
     if let Some(code) = key.strip_prefix("b:") {
-        let Some(base) = items.base_items_by_code.get(code) else { return Value::Null };
+        let Some(base) = items.base_items_by_code.get(code) else {
+            return Value::Null;
+        };
         let mut out = base_stats(game_data, base);
         out.insert("name".into(), json!(items.base_item_display_name(base)));
         out.insert("kind".into(), json!("base"));
@@ -104,7 +122,10 @@ fn item(game_data: &GameData, display: &DisplayData, named: &HashMap<&str, (&Nam
             let socketed: Vec<Value> = slots
                 .iter()
                 .map(|(slot, props)| {
-                    let lines: Vec<String> = props.iter().filter_map(|p| display.props.render(p)).collect();
+                    let lines: Vec<String> = props
+                        .iter()
+                        .filter_map(|p| display.props.render(p))
+                        .collect();
                     json!({ "slot": slot, "lines": lines })
                 })
                 .filter(|s| s["lines"].as_array().is_some_and(|l| !l.is_empty()))
@@ -113,8 +134,12 @@ fn item(game_data: &GameData, display: &DisplayData, named: &HashMap<&str, (&Nam
         }
         return Value::Object(out);
     }
-    let Some(&(n, kind)) = named.get(key) else { return Value::Null };
-    let Some(base) = items.base_items_by_code.get(&n.base_code) else { return Value::Null };
+    let Some(&(n, kind)) = named.get(key) else {
+        return Value::Null;
+    };
+    let Some(base) = items.base_items_by_code.get(&n.base_code) else {
+        return Value::Null;
+    };
     let mut out = base_stats(game_data, base);
     out.insert("name".into(), json!(n.name));
     out.insert("kind".into(), json!(kind));
@@ -126,7 +151,11 @@ fn item(game_data: &GameData, display: &DisplayData, named: &HashMap<&str, (&Nam
     if !n.set_name.is_empty() {
         out.insert("set".into(), json!(n.set_name));
     }
-    let props: Vec<String> = n.props.iter().filter_map(|p| display.props.render(p)).collect();
+    let props: Vec<String> = n
+        .props
+        .iter()
+        .filter_map(|p| display.props.render(p))
+        .collect();
     out.insert("props".into(), json!(props));
     let bonuses: Vec<Value> = n
         .set_bonuses
@@ -154,7 +183,14 @@ pub fn build(
         .values()
         .flatten()
         .map(|n| (format!("u:{}", n.id), n, "unique"))
-        .chain(game_data.items.set_items_by_base_code.values().flatten().map(|n| (format!("s:{}", n.id), n, "set")))
+        .chain(
+            game_data
+                .items
+                .set_items_by_base_code
+                .values()
+                .flatten()
+                .map(|n| (format!("s:{}", n.id), n, "set")),
+        )
         .collect();
     for (key, n, kind) in &keyed {
         named.insert(key.as_str(), (n, kind));
@@ -182,20 +218,37 @@ mod tests {
             .flatten()
             .find(|n| n.id == id)
             .unwrap_or_else(|| panic!("{id} not found"));
-        n.props.iter().filter_map(|p| display.props.render(p)).collect()
+        n.props
+            .iter()
+            .filter_map(|p| display.props.render(p))
+            .collect()
     }
 
     #[test]
     fn renders_unique_props() {
         let (g, d) = (GameData::load(), DisplayData::load());
         let shako = named_props(&g, &d, "Harlequin Crest");
-        for line in ["+2 to All Skills", "+(1.5 per Level) to Life (Based on Character Level)", "50% Better Chance of Getting Magic Items"] {
+        for line in [
+            "+2 to All Skills",
+            "+(1.5 per Level) to Life (Based on Character Level)",
+            "50% Better Chance of Getting Magic Items",
+        ] {
             assert!(shako.iter().any(|l| l == line), "{line:?} not in {shako:?}");
         }
         let griffon = named_props(&g, &d, "Griffon's Eye");
-        assert!(griffon.iter().any(|l| l == "+(10-15)% to Lightning Skill Damage"), "{griffon:?}");
+        assert!(
+            griffon
+                .iter()
+                .any(|l| l == "+(10-15)% to Lightning Skill Damage"),
+            "{griffon:?}"
+        );
         let carin = named_props(&g, &d, "Carin Shard");
-        assert!(carin.iter().any(|l| l == "+2 to Summoning Skills (Necromancer only)"), "{carin:?}");
+        assert!(
+            carin
+                .iter()
+                .any(|l| l == "+2 to Summoning Skills (Necromancer only)"),
+            "{carin:?}"
+        );
     }
 
     #[test]
@@ -217,7 +270,10 @@ mod tests {
         let life = |id: &str, diff: Difficulty, level: usize| {
             let s = g.monster_classes[id].stats[&diff];
             let base = d.monster_levels.hp[&diff][level];
-            (s.min_hp_pct as i64 * base / 100, s.max_hp_pct as i64 * base / 100)
+            (
+                s.min_hp_pct as i64 * base / 100,
+                s.max_hp_pct as i64 * base / 100,
+            )
         };
         assert_eq!(life("fallen1", Difficulty::Normal, 1), (1, 4));
         // Published single-player values (e.g. diablo2.wiki.fextralife.com, rankedboost.com).

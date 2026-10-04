@@ -1,5 +1,5 @@
 use crate::data::items::ItemDatabase;
-use crate::data::treasureclass::{TreasureClassLibrary, TreasureClassRow};
+use crate::data::treasure_class::{TreasureClassLibrary, TreasureClassRow};
 use crate::model::QualityRatios;
 use std::collections::HashMap;
 
@@ -10,7 +10,11 @@ enum NodeKind<'a> {
     Unknown,
 }
 
-fn classify<'a>(name: &str, tcs: &'a TreasureClassLibrary, items: &'a ItemDatabase) -> NodeKind<'a> {
+fn classify<'a>(
+    name: &str,
+    tcs: &'a TreasureClassLibrary,
+    items: &'a ItemDatabase,
+) -> NodeKind<'a> {
     if let Some(row) = tcs.by_name.get(name) {
         return NodeKind::Defined(row);
     }
@@ -26,7 +30,12 @@ fn classify<'a>(name: &str, tcs: &'a TreasureClassLibrary, items: &'a ItemDataba
 
 /// Mirrors the D2/D2R "NoDrop" scaling with player count and party size: more players makes the
 /// implicit "nothing" outcome proportionally less likely, asymptotically (never reaches zero).
-fn calculate_no_drop(tc_denominator: i64, no_drop: Option<i64>, n_players: i32, party_size: i32) -> i64 {
+fn calculate_no_drop(
+    tc_denominator: i64,
+    no_drop: Option<i64>,
+    n_players: i32,
+    party_size: i32,
+) -> i64 {
     let Some(no_drop) = no_drop else { return 0 };
     if no_drop < 1 {
         return 0;
@@ -34,7 +43,8 @@ fn calculate_no_drop(tc_denominator: i64, no_drop: Option<i64>, n_players: i32, 
     if n_players <= 1 {
         return no_drop;
     }
-    let no_drop_exponent = (1.0 + (n_players as f64 - 1.0) / 2.0 + (party_size as f64 - 1.0) / 2.0).floor();
+    let no_drop_exponent =
+        (1.0 + (n_players as f64 - 1.0) / 2.0 + (party_size as f64 - 1.0) / 2.0).floor();
     let base_no_drop_rate = no_drop as f64 / (no_drop + tc_denominator) as f64;
     let new_no_drop_rate = base_no_drop_rate.powf(no_drop_exponent);
     let new_no_drop_num = (new_no_drop_rate / (1.0 - new_no_drop_rate)) * tc_denominator as f64;
@@ -70,11 +80,21 @@ fn recurse(
         _ => 1,
     };
     let parent_picks_negative = parent_picks < 0;
-    let adjusted_picks: i64 = if configured_picks < 0 { accumulated_picks } else { configured_picks as i64 };
-    let updated_accumulated_picks: i64 =
-        if parent_picks < 0 { sel_num * accumulated_picks * adjusted_picks } else { accumulated_picks * adjusted_picks };
-    let selection_probability =
-        if parent_picks_negative { 1.0 } else { (sel_num as f64 / sel_den as f64) * path_probability };
+    let adjusted_picks: i64 = if configured_picks < 0 {
+        accumulated_picks
+    } else {
+        configured_picks as i64
+    };
+    let updated_accumulated_picks: i64 = if parent_picks < 0 {
+        sel_num * accumulated_picks * adjusted_picks
+    } else {
+        accumulated_picks * adjusted_picks
+    };
+    let selection_probability = if parent_picks_negative {
+        1.0
+    } else {
+        (sel_num as f64 / sel_den as f64) * path_probability
+    };
 
     if parent_picks_negative && buckets.last().map(|b| !b.is_empty()).unwrap_or(false) {
         buckets.push(HashMap::new());
@@ -87,7 +107,9 @@ fn recurse(
 
     match kind {
         NodeKind::Leaf => {
-            let bucket = buckets.last_mut().expect("at least one bucket always exists");
+            let bucket = buckets
+                .last_mut()
+                .expect("at least one bucket always exists");
             let entry = bucket.entry(name.to_string()).or_insert(LeafAccum {
                 probability: 0.0,
                 ratios: QualityRatios::default(),
@@ -99,7 +121,8 @@ fn recurse(
         }
         NodeKind::Defined(row) => {
             let denom = row.items_denominator();
-            let denom_with_no_drop = denom + calculate_no_drop(denom, row.no_drop, n_players, party_size);
+            let denom_with_no_drop =
+                denom + calculate_no_drop(denom, row.no_drop, n_players, party_size);
             for (item_name, weight) in &row.items {
                 recurse(
                     item_name,
@@ -158,15 +181,35 @@ pub fn resolve_to_base_items(
     n_players: i32,
     party_size: i32,
 ) -> HashMap<String, (f64, QualityRatios)> {
-    let root_ratios = tcs.by_name.get(tc_name).map(|r| r.ratios).unwrap_or_default();
+    let root_ratios = tcs
+        .by_name
+        .get(tc_name)
+        .map(|r| r.ratios)
+        .unwrap_or_default();
     let mut buckets: Vec<Bucket> = vec![HashMap::new()];
-    recurse(tc_name, 1, 1, 1, 1.0, root_ratios, &mut buckets, n_players, party_size, 1, tcs, items);
+    recurse(
+        tc_name,
+        1,
+        1,
+        1,
+        1.0,
+        root_ratios,
+        &mut buckets,
+        n_players,
+        party_size,
+        1,
+        tcs,
+        items,
+    );
 
     let mut per_leaf: HashMap<String, Vec<(f64, QualityRatios)>> = HashMap::new();
     for bucket in &buckets {
         for (leaf, accum) in bucket {
             let p = apply_picks(accum.probability, accum.picks);
-            per_leaf.entry(leaf.clone()).or_default().push((p, accum.ratios));
+            per_leaf
+                .entry(leaf.clone())
+                .or_default()
+                .push((p, accum.ratios));
         }
     }
 
@@ -174,8 +217,9 @@ pub fn resolve_to_base_items(
         .into_iter()
         .map(|(leaf, paths)| {
             let combined_prob = 1.0 - paths.iter().map(|(p, _)| 1.0 - p).product::<f64>();
-            let combined_ratios =
-                paths.iter().fold(QualityRatios::default(), |acc, (_, r)| acc.merge(r));
+            let combined_ratios = paths
+                .iter()
+                .fold(QualityRatios::default(), |acc, (_, r)| acc.merge(r));
             (leaf, (combined_prob, combined_ratios))
         })
         .collect()

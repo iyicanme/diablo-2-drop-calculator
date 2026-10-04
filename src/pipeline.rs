@@ -1,7 +1,7 @@
+use crate::data::GameData;
 use crate::data::items::NamedItem;
 use crate::data::levels::Area;
 use crate::data::monsters::{MonsterClass, Resistances};
-use crate::data::GameData;
 use crate::engine::{quality, tc_resolver, terror};
 use crate::export::DropRow;
 use crate::model::{Difficulty, MonsterType, QualityRatios, TreasureClassType};
@@ -26,7 +26,12 @@ fn desecrated_type_for(tc_type: TreasureClassType) -> Option<TreasureClassType> 
     }
 }
 
-fn compute_level(monster_class: &MonsterClass, difficulty: Difficulty, monster_type: MonsterType, area: &Area) -> i32 {
+fn compute_level(
+    monster_class: &MonsterClass,
+    difficulty: Difficulty,
+    monster_type: MonsterType,
+    area: &Area,
+) -> i32 {
     let base = if difficulty == Difficulty::Normal || monster_type == MonsterType::Boss {
         *monster_class.levels.get(&difficulty).unwrap_or(&1)
     } else {
@@ -46,7 +51,11 @@ fn minion_level(leader: &MonsterClass, difficulty: Difficulty, area: &Area) -> i
     } else {
         *area.monster_levels.get(&difficulty).unwrap_or(&1)
     };
-    base + if leader.is_boss { 0 } else { MonsterType::Minion.level_adjustment() }
+    base + if leader.is_boss {
+        0
+    } else {
+        MonsterType::Minion.level_adjustment()
+    }
 }
 
 /// (minion class, area, difficulty, terrorized, level): two leaders can field identical minions
@@ -66,11 +75,19 @@ fn process_minions(
 ) {
     let level = minion_level(leader, difficulty, area);
     for minion_id in &leader.minion_ids {
-        let Some(minion) = game_data.monster_classes.get(minion_id) else { continue };
+        let Some(minion) = game_data.monster_classes.get(minion_id) else {
+            continue;
+        };
         let display_name = game_data.monster_display_name(&minion.name_str);
-        let resistances = *minion.resistances.get(&difficulty).unwrap_or(&Resistances::default());
+        let resistances = *minion
+            .resistances
+            .get(&difficulty)
+            .unwrap_or(&Resistances::default());
 
-        if let Some(base_tc) = minion.treasure_classes.get(&(difficulty, TreasureClassType::Regular)) {
+        if let Some(base_tc) = minion
+            .treasure_classes
+            .get(&(difficulty, TreasureClassType::Regular))
+        {
             if seen.insert((minion.id.clone(), area.id.clone(), difficulty, false, level)) {
                 let instance = MonsterInstance {
                     display_name: display_name.clone(),
@@ -82,7 +99,9 @@ fn process_minions(
                     resistances,
                     terrorized: false,
                     level,
-                    resolved_tc: game_data.treasure_classes.resolved_tc_for_monster(base_tc, level, difficulty, false),
+                    resolved_tc: game_data
+                        .treasure_classes
+                        .resolved_tc_for_monster(base_tc, level, difficulty, false),
                 };
                 process_instance(game_data, config, config.players, &instance, tc_cache, emit);
             }
@@ -90,9 +109,23 @@ fn process_minions(
 
         // Terrorized minions follow the same rule as other monsters here: only classes with a
         // desecrated TC get a Terror Zone row.
-        if let Some(desecrated_base) = minion.treasure_classes.get(&(difficulty, TreasureClassType::DesecratedRegular)) {
-            let d_level = terror::desecrated_level(MonsterType::Minion, difficulty, level, config.character_level);
-            if seen.insert((minion.id.clone(), area.id.clone(), difficulty, true, d_level)) {
+        if let Some(desecrated_base) = minion
+            .treasure_classes
+            .get(&(difficulty, TreasureClassType::DesecratedRegular))
+        {
+            let d_level = terror::desecrated_level(
+                MonsterType::Minion,
+                difficulty,
+                level,
+                config.character_level,
+            );
+            if seen.insert((
+                minion.id.clone(),
+                area.id.clone(),
+                difficulty,
+                true,
+                d_level,
+            )) {
                 let instance = MonsterInstance {
                     display_name,
                     monster_class_id: minion.id.clone(),
@@ -103,7 +136,9 @@ fn process_minions(
                     resistances,
                     terrorized: true,
                     level: d_level,
-                    resolved_tc: game_data.treasure_classes.upgrade_for_level(desecrated_base, d_level),
+                    resolved_tc: game_data
+                        .treasure_classes
+                        .upgrade_for_level(desecrated_base, d_level),
                 };
                 process_instance(game_data, config, config.players, &instance, tc_cache, emit);
             }
@@ -148,7 +183,10 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
     for area in game_data.areas.values() {
         for ((difficulty, monster_type), ids) in &area.monster_class_ids {
             for id in ids {
-                areas_by_monster.entry((id.as_str(), *difficulty, *monster_type)).or_default().push(area);
+                areas_by_monster
+                    .entry((id.as_str(), *difficulty, *monster_type))
+                    .or_default()
+                    .push(area);
             }
         }
     }
@@ -156,17 +194,30 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
     for monster_class in game_data.monster_classes.values() {
         let display_name = game_data.monster_display_name(&monster_class.name_str);
         for (&(difficulty, tc_type), base_tc_name) in &monster_class.treasure_classes {
-            if tc_type.is_desecrated() || tc_type == TreasureClassType::Quest || tc_type == TreasureClassType::HeraldRegular {
+            if tc_type.is_desecrated()
+                || tc_type == TreasureClassType::Quest
+                || tc_type == TreasureClassType::HeraldRegular
+            {
                 continue;
             }
             for &monster_type in tc_type.valid_monster_types() {
-                let Some(areas) = areas_by_monster.get(&(monster_class.id.as_str(), difficulty, monster_type)) else {
+                let Some(areas) =
+                    areas_by_monster.get(&(monster_class.id.as_str(), difficulty, monster_type))
+                else {
                     continue;
                 };
                 for area in areas {
                     let level = compute_level(monster_class, difficulty, monster_type, area);
-                    let resolved_tc = game_data.treasure_classes.resolved_tc_for_monster(base_tc_name, level, difficulty, false);
-                    let resistances = *monster_class.resistances.get(&difficulty).unwrap_or(&Resistances::default());
+                    let resolved_tc = game_data.treasure_classes.resolved_tc_for_monster(
+                        base_tc_name,
+                        level,
+                        difficulty,
+                        false,
+                    );
+                    let resistances = *monster_class
+                        .resistances
+                        .get(&difficulty)
+                        .unwrap_or(&Resistances::default());
 
                     let instance = MonsterInstance {
                         display_name: display_name.clone(),
@@ -180,12 +231,29 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                         level,
                         resolved_tc,
                     };
-                    process_instance(game_data, config, party_size, &instance, &mut tc_cache, emit);
+                    process_instance(
+                        game_data,
+                        config,
+                        party_size,
+                        &instance,
+                        &mut tc_cache,
+                        emit,
+                    );
 
                     if let Some(desecrated_type) = desecrated_type_for(tc_type) {
-                        if let Some(desecrated_base) = monster_class.treasure_classes.get(&(difficulty, desecrated_type)) {
-                            let d_level = terror::desecrated_level(monster_type, difficulty, level, config.character_level);
-                            let resolved = game_data.treasure_classes.upgrade_for_level(desecrated_base, d_level);
+                        if let Some(desecrated_base) = monster_class
+                            .treasure_classes
+                            .get(&(difficulty, desecrated_type))
+                        {
+                            let d_level = terror::desecrated_level(
+                                monster_type,
+                                difficulty,
+                                level,
+                                config.character_level,
+                            );
+                            let resolved = game_data
+                                .treasure_classes
+                                .upgrade_for_level(desecrated_base, d_level);
                             let t_instance = MonsterInstance {
                                 display_name: display_name.clone(),
                                 monster_class_id: monster_class.id.clone(),
@@ -198,13 +266,29 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                                 level: d_level,
                                 resolved_tc: resolved,
                             };
-                            process_instance(game_data, config, party_size, &t_instance, &mut tc_cache, emit);
+                            process_instance(
+                                game_data,
+                                config,
+                                party_size,
+                                &t_instance,
+                                &mut tc_cache,
+                                emit,
+                            );
                         }
                     }
 
                     // Unique packs always spawn with minions.
                     if monster_type == MonsterType::Unique {
-                        process_minions(game_data, config, monster_class, area, difficulty, &mut seen_minions, &mut tc_cache, emit);
+                        process_minions(
+                            game_data,
+                            config,
+                            monster_class,
+                            area,
+                            difficulty,
+                            &mut seen_minions,
+                            &mut tc_cache,
+                            emit,
+                        );
                     }
                 }
             }
@@ -212,15 +296,28 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
     }
 
     for superunique in &game_data.superuniques {
-        let Some(monster_class) = game_data.monster_classes.get(&superunique.monster_class_id) else { continue };
-        let Some(area) = game_data.areas.get(&superunique.area_id) else { continue };
+        let Some(monster_class) = game_data.monster_classes.get(&superunique.monster_class_id)
+        else {
+            continue;
+        };
+        let Some(area) = game_data.areas.get(&superunique.area_id) else {
+            continue;
+        };
         for difficulty in Difficulty::ALL {
-            let Some(base_tc) = superunique.treasure_classes.get(&(difficulty, TreasureClassType::Regular)) else {
+            let Some(base_tc) = superunique
+                .treasure_classes
+                .get(&(difficulty, TreasureClassType::Regular))
+            else {
                 continue;
             };
             let level = compute_level(monster_class, difficulty, MonsterType::SuperUnique, area);
-            let resolved_tc = game_data.treasure_classes.resolved_tc_for_monster(base_tc, level, difficulty, false);
-            let resistances = *monster_class.resistances.get(&difficulty).unwrap_or(&Resistances::default());
+            let resolved_tc = game_data
+                .treasure_classes
+                .resolved_tc_for_monster(base_tc, level, difficulty, false);
+            let resistances = *monster_class
+                .resistances
+                .get(&difficulty)
+                .unwrap_or(&Resistances::default());
 
             let instance = MonsterInstance {
                 display_name: superunique.name.clone(),
@@ -234,11 +331,28 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                 level,
                 resolved_tc,
             };
-            process_instance(game_data, config, party_size, &instance, &mut tc_cache, emit);
+            process_instance(
+                game_data,
+                config,
+                party_size,
+                &instance,
+                &mut tc_cache,
+                emit,
+            );
 
-            if let Some(desecrated_base) = superunique.treasure_classes.get(&(difficulty, TreasureClassType::DesecratedRegular)) {
-                let d_level = terror::desecrated_level(MonsterType::SuperUnique, difficulty, level, config.character_level);
-                let resolved = game_data.treasure_classes.upgrade_for_level(desecrated_base, d_level);
+            if let Some(desecrated_base) = superunique
+                .treasure_classes
+                .get(&(difficulty, TreasureClassType::DesecratedRegular))
+            {
+                let d_level = terror::desecrated_level(
+                    MonsterType::SuperUnique,
+                    difficulty,
+                    level,
+                    config.character_level,
+                );
+                let resolved = game_data
+                    .treasure_classes
+                    .upgrade_for_level(desecrated_base, d_level);
                 let t_instance = MonsterInstance {
                     display_name: superunique.name.clone(),
                     monster_class_id: monster_class.id.clone(),
@@ -251,22 +365,46 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                     level: d_level,
                     resolved_tc: resolved,
                 };
-                process_instance(game_data, config, party_size, &t_instance, &mut tc_cache, emit);
+                process_instance(
+                    game_data,
+                    config,
+                    party_size,
+                    &t_instance,
+                    &mut tc_cache,
+                    emit,
+                );
             }
 
             if superunique.has_minions {
-                process_minions(game_data, config, monster_class, area, difficulty, &mut seen_minions, &mut tc_cache, emit);
+                process_minions(
+                    game_data,
+                    config,
+                    monster_class,
+                    area,
+                    difficulty,
+                    &mut seen_minions,
+                    &mut tc_cache,
+                    emit,
+                );
             }
         }
     }
 }
 
-fn eligible_named<'a>(candidates: Option<&'a Vec<NamedItem>>, level: i32, monster_class_id: &str) -> Vec<&'a NamedItem> {
+fn eligible_named<'a>(
+    candidates: Option<&'a Vec<NamedItem>>,
+    level: i32,
+    monster_class_id: &str,
+) -> Vec<&'a NamedItem> {
     candidates
         .map(|v| {
             v.iter()
                 .filter(|c| c.level <= level)
-                .filter(|c| c.only_drops_from_monster_class.as_deref().is_none_or(|m| m == monster_class_id))
+                .filter(|c| {
+                    c.only_drops_from_monster_class
+                        .as_deref()
+                        .is_none_or(|m| m == monster_class_id)
+                })
                 .collect()
         })
         .unwrap_or_default()
@@ -281,9 +419,17 @@ fn process_instance(
     emit: &mut dyn FnMut(DropRow),
 ) {
     let items = &game_data.items;
-    let resolved = tc_cache.entry(instance.resolved_tc.clone()).or_insert_with(|| {
-        tc_resolver::resolve_to_base_items(&game_data.treasure_classes, items, &instance.resolved_tc, config.players, party_size)
-    });
+    let resolved = tc_cache
+        .entry(instance.resolved_tc.clone())
+        .or_insert_with(|| {
+            tc_resolver::resolve_to_base_items(
+                &game_data.treasure_classes,
+                items,
+                &instance.resolved_tc,
+                config.players,
+                party_size,
+            )
+        });
 
     let r = &instance.resistances;
     let base_row = DropRow {
@@ -315,7 +461,9 @@ fn process_instance(
         if *leaf_prob <= 0.0 {
             continue;
         }
-        let Some(base_item) = items.base_items_by_code.get(base_code) else { continue };
+        let Some(base_item) = items.base_items_by_code.get(base_code) else {
+            continue;
+        };
         let ratio_row = items.item_ratio_for(base_item);
 
         let unique_candidates = eligible_named(
@@ -323,8 +471,11 @@ fn process_instance(
             instance.level,
             &instance.monster_class_id,
         );
-        let set_candidates =
-            eligible_named(items.set_items_by_base_code.get(base_code), instance.level, &instance.monster_class_id);
+        let set_candidates = eligible_named(
+            items.set_items_by_base_code.get(base_code),
+            instance.level,
+            &instance.monster_class_id,
+        );
 
         let split = quality::split_quality(
             instance.level,
@@ -336,14 +487,35 @@ fn process_instance(
             !set_candidates.is_empty(),
         );
 
-        emit_named(emit, &base_row, base_item, &unique_candidates, *leaf_prob * split.unique, "Unique");
-        emit_named(emit, &base_row, base_item, &set_candidates, *leaf_prob * split.set, "Set");
+        emit_named(
+            emit,
+            &base_row,
+            base_item,
+            &unique_candidates,
+            *leaf_prob * split.unique,
+            "Unique",
+        );
+        emit_named(
+            emit,
+            &base_row,
+            base_item,
+            &set_candidates,
+            *leaf_prob * split.set,
+            "Set",
+        );
 
         // Magic/Rare are deliberately not emitted as their own rows (procedurally-named, not useful
         // to filter on individually) — but they're still subtracted out of White above them, so White
         // correctly reflects "this base item, unenchanted" (e.g. still socketable for runewords).
         let base_name = items.base_item_display_name(base_item);
-        push_generic(emit, &base_row, base_item, &base_name, *leaf_prob * split.white, "Base Item");
+        push_generic(
+            emit,
+            &base_row,
+            base_item,
+            &base_name,
+            *leaf_prob * split.white,
+            "Base Item",
+        );
     }
 }
 
@@ -369,7 +541,11 @@ fn emit_named(
         }
         emit(DropRow {
             item_name: candidate.name.clone(),
-            item_key: format!("{}:{}", if quality_label == "Set" { "s" } else { "u" }, candidate.id),
+            item_key: format!(
+                "{}:{}",
+                if quality_label == "Set" { "s" } else { "u" },
+                candidate.id
+            ),
             item_type: base_item.item_type_display.clone(),
             item_tier: base_item.tier.label(),
             magic_quality: quality_label,
@@ -427,4 +603,3 @@ fn clone_base(base_row: &DropRow) -> DropRow {
         monster_level: base_row.monster_level,
     }
 }
-

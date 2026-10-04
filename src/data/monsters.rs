@@ -68,7 +68,10 @@ pub fn load_monster_classes(data: &str) -> HashMap<String, MonsterClass> {
         let minion_ids: Vec<String> = if minion1.is_empty() && minion2.is_empty() {
             vec![id.clone()]
         } else {
-            [minion1, minion2].into_iter().filter(|s| !s.is_empty()).collect()
+            [minion1, minion2]
+                .into_iter()
+                .filter(|s| !s.is_empty())
+                .collect()
         };
 
         let mut treasure_classes = HashMap::new();
@@ -78,13 +81,31 @@ pub fn load_monster_classes(data: &str) -> HashMap<String, MonsterClass> {
                 treasure_classes.insert((difficulty, tc_type), value.trim().to_string());
             }
         };
-        for (difficulty, suffix) in
-            [(Difficulty::Normal, ""), (Difficulty::Nightmare, "(N)"), (Difficulty::Hell, "(H)")]
-        {
-            add(difficulty, TreasureClassType::Regular, get(row, &format!("TreasureClass{suffix}")));
-            add(difficulty, TreasureClassType::Champion, get(row, &format!("TreasureClassChamp{suffix}")));
-            add(difficulty, TreasureClassType::Unique, get(row, &format!("TreasureClassUnique{suffix}")));
-            add(difficulty, TreasureClassType::Quest, get(row, &format!("TreasureClassQuest{suffix}")));
+        for (difficulty, suffix) in [
+            (Difficulty::Normal, ""),
+            (Difficulty::Nightmare, "(N)"),
+            (Difficulty::Hell, "(H)"),
+        ] {
+            add(
+                difficulty,
+                TreasureClassType::Regular,
+                get(row, &format!("TreasureClass{suffix}")),
+            );
+            add(
+                difficulty,
+                TreasureClassType::Champion,
+                get(row, &format!("TreasureClassChamp{suffix}")),
+            );
+            add(
+                difficulty,
+                TreasureClassType::Unique,
+                get(row, &format!("TreasureClassUnique{suffix}")),
+            );
+            add(
+                difficulty,
+                TreasureClassType::Quest,
+                get(row, &format!("TreasureClassQuest{suffix}")),
+            );
             add(
                 difficulty,
                 TreasureClassType::DesecratedRegular,
@@ -101,7 +122,11 @@ pub fn load_monster_classes(data: &str) -> HashMap<String, MonsterClass> {
                 get(row, &format!("TreasureClassDesecratedUnique{suffix}")),
             );
             if !cannot_herald {
-                add(difficulty, TreasureClassType::HeraldRegular, get(row, &format!("TreasureClassHerald{suffix}")));
+                add(
+                    difficulty,
+                    TreasureClassType::HeraldRegular,
+                    get(row, &format!("TreasureClassHerald{suffix}")),
+                );
             }
         }
 

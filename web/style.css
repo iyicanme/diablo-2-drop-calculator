@@ -384,6 +384,29 @@ button.secondary {
   font-variant-numeric: tabular-nums;
 }
 
+.pick.wide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  /* Match the text filters: `.pick` drops `.finput`'s vertical padding, and the cell sets row height. */
+  height: 100%;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.pick-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pick-caret {
+  flex: none;
+}
+
 .pick.active,
 .pick[aria-expanded='true'] {
   border-color: var(--accent);

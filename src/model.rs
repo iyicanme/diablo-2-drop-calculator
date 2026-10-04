@@ -40,7 +40,10 @@ impl MonsterType {
         match self {
             MonsterType::Regular => 2,
             MonsterType::Champion => 4,
-            MonsterType::Unique | MonsterType::Minion | MonsterType::Boss | MonsterType::SuperUnique => 5,
+            MonsterType::Unique
+            | MonsterType::Minion
+            | MonsterType::Boss
+            | MonsterType::SuperUnique => 5,
         }
     }
 
@@ -48,7 +51,10 @@ impl MonsterType {
         let (n, nm, h) = match self {
             MonsterType::Regular => (45, 71, 96),
             MonsterType::Champion => (47, 73, 98),
-            MonsterType::Unique | MonsterType::Minion | MonsterType::Boss | MonsterType::SuperUnique => (48, 74, 99),
+            MonsterType::Unique
+            | MonsterType::Minion
+            | MonsterType::Boss
+            | MonsterType::SuperUnique => (48, 74, 99),
         };
         match difficulty {
             Difficulty::Normal => n,
@@ -93,13 +99,19 @@ pub enum TreasureClassType {
 impl TreasureClassType {
     pub fn valid_monster_types(&self) -> &'static [MonsterType] {
         match self {
-            TreasureClassType::Regular => &[MonsterType::Regular, MonsterType::Boss, MonsterType::SuperUnique],
+            TreasureClassType::Regular => &[
+                MonsterType::Regular,
+                MonsterType::Boss,
+                MonsterType::SuperUnique,
+            ],
             TreasureClassType::Champion => &[MonsterType::Champion],
             TreasureClassType::Unique => &[MonsterType::Unique],
             TreasureClassType::Quest => &[MonsterType::Regular, MonsterType::Boss],
-            TreasureClassType::DesecratedRegular => {
-                &[MonsterType::Regular, MonsterType::Boss, MonsterType::SuperUnique]
-            }
+            TreasureClassType::DesecratedRegular => &[
+                MonsterType::Regular,
+                MonsterType::Boss,
+                MonsterType::SuperUnique,
+            ],
             TreasureClassType::DesecratedChampion => &[MonsterType::Champion],
             TreasureClassType::DesecratedUnique => &[MonsterType::Unique],
             TreasureClassType::HeraldRegular => &[MonsterType::Regular, MonsterType::Boss],

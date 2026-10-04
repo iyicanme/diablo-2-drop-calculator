@@ -109,11 +109,18 @@ impl Output {
             row.res_magic,
             row.res_physical,
         ];
-        self.flags.push(bits.iter().enumerate().fold(0, |acc, (bit, &set)| acc | ((set as u8) << bit)));
+        self.flags.push(
+            bits.iter()
+                .enumerate()
+                .fold(0, |acc, (bit, &set)| acc | ((set as u8) << bit)),
+        );
         self.act.push(row.act as u8);
         self.category.push(Category::of(row) as u8);
         self.chance.push(row.drop_chance);
-        for (i, key) in [&row.monster_key, &row.area_id, &row.item_key].into_iter().enumerate() {
+        for (i, key) in [&row.monster_key, &row.area_id, &row.item_key]
+            .into_iter()
+            .enumerate()
+        {
             let index = self.refs[i].intern(key).unwrap_or_else(|| {
                 self.overflowed = true;
                 0
@@ -150,7 +157,12 @@ static RESULT: Mutex<Option<Output>> = Mutex::new(None);
 /// Runs the same computation as the CLI. `max_chance_per_x <= 0` means "keep everything".
 /// Returns the row count, or `ERROR`.
 #[unsafe(no_mangle)]
-pub extern "C" fn generate(players: i32, magic_find: i32, character_level: i32, max_chance_per_x: f64) -> u32 {
+pub extern "C" fn generate(
+    players: i32,
+    magic_find: i32,
+    character_level: i32,
+    max_chance_per_x: f64,
+) -> u32 {
     free_result();
     if !(1..=8).contains(&players) || magic_find < 0 {
         return ERROR;
@@ -158,7 +170,11 @@ pub extern "C" fn generate(players: i32, magic_find: i32, character_level: i32, 
     let max_chance_per_x = (max_chance_per_x > 0.0).then_some(max_chance_per_x);
 
     let game_data = GameData::load();
-    let config = pipeline::Config { players, magic_find: magic_find as i64, character_level };
+    let config = pipeline::Config {
+        players,
+        magic_find: magic_find as i64,
+        character_level,
+    };
 
     let mut output = Output::default();
     pipeline::generate_with(&game_data, &config, |row| {
@@ -176,7 +192,13 @@ pub extern "C" fn generate(players: i32, magic_find: i32, character_level: i32, 
     output.dictionary_json = serde_json::to_string(&output.dictionary.keys).unwrap_or_default();
     output.dictionary.lookup = HashMap::new();
     let [monsters, areas, items] = &output.refs;
-    let details = details::build(&game_data, &DisplayData::load(), &monsters.keys, &areas.keys, &items.keys);
+    let details = details::build(
+        &game_data,
+        &DisplayData::load(),
+        &monsters.keys,
+        &areas.keys,
+        &items.keys,
+    );
     output.details_json = details.to_string();
     output.refs = Default::default();
     let rows = output.chance.len() as u32;
@@ -186,12 +208,22 @@ pub extern "C" fn generate(players: i32, magic_find: i32, character_level: i32, 
 
 #[unsafe(no_mangle)]
 pub extern "C" fn column_ptr(column: u32) -> *const u8 {
-    RESULT.lock().unwrap().as_ref().map_or(std::ptr::null(), |o| o.column_bytes(column as usize).as_ptr())
+    RESULT
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map_or(std::ptr::null(), |o| {
+            o.column_bytes(column as usize).as_ptr()
+        })
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn column_len(column: u32) -> u32 {
-    RESULT.lock().unwrap().as_ref().map_or(0, |o| o.column_bytes(column as usize).len() as u32)
+    RESULT
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map_or(0, |o| o.column_bytes(column as usize).len() as u32)
 }
 
 #[unsafe(no_mangle)]

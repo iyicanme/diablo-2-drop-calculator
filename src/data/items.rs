@@ -30,7 +30,13 @@ pub fn load_item_types(data: &str) -> HashMap<String, ItemType> {
         if code.is_empty() {
             continue;
         }
-        equiv_by_code.insert(code, (get(row, "Equiv1").to_string(), get(row, "Equiv2").to_string()));
+        equiv_by_code.insert(
+            code,
+            (
+                get(row, "Equiv1").to_string(),
+                get(row, "Equiv2").to_string(),
+            ),
+        );
     }
 
     let mut result = HashMap::new();
@@ -108,7 +114,11 @@ fn parse_base_stats(row: &super::raw::Row) -> BaseStats {
         // Two-handed-only weapons (e.g. polearms) keep their damage in the 2H columns only.
         one_hand_damage: pair(row, "mindam", "maxdam"),
         two_hand_damage: pair(row, "2handmindam", "2handmaxdam"),
-        durability: if is_one(row, "nodurability") { None } else { positive("durability") },
+        durability: if is_one(row, "nodurability") {
+            None
+        } else {
+            positive("durability")
+        },
         max_sockets: positive("gemsockets"),
     }
 }
@@ -122,7 +132,13 @@ pub struct RawProp {
     pub max: String,
 }
 
-fn read_props(row: &super::raw::Row, prop: &str, par: &str, min: &str, max: &str) -> Option<RawProp> {
+fn read_props(
+    row: &super::raw::Row,
+    prop: &str,
+    par: &str,
+    min: &str,
+    max: &str,
+) -> Option<RawProp> {
     let code = get(row, prop).trim();
     if code.is_empty() {
         return None;
@@ -253,7 +269,11 @@ fn load_item_ratios(data: &str) -> Vec<ItemRatioRow> {
                 },
             );
         }
-        result.push(ItemRatioRow { is_uber, is_class_specific, modifiers });
+        result.push(ItemRatioRow {
+            is_uber,
+            is_class_specific,
+            modifiers,
+        });
     }
     result
 }
@@ -301,7 +321,15 @@ fn load_unique_items(data: &str, base_items_by_code: &HashMap<String, BaseItem>)
             required_level: get_i32(row, "lvl req"),
             set_name: String::new(),
             props: (1..=12)
-                .filter_map(|i| read_props(row, &format!("prop{i}"), &format!("par{i}"), &format!("min{i}"), &format!("max{i}")))
+                .filter_map(|i| {
+                    read_props(
+                        row,
+                        &format!("prop{i}"),
+                        &format!("par{i}"),
+                        &format!("min{i}"),
+                        &format!("max{i}"),
+                    )
+                })
                 .collect(),
             set_bonuses: Vec::new(),
             level,
@@ -324,8 +352,11 @@ fn load_set_items(data: &str, base_items_by_code: &HashMap<String, BaseItem>) ->
         if !base_items_by_code.contains_key(&base_code) {
             continue;
         }
-        let only_drops_from_monster_class =
-            if get(row, "set") == "Cow King's Leathers" { Some("hellbovine".to_string()) } else { None };
+        let only_drops_from_monster_class = if get(row, "set") == "Cow King's Leathers" {
+            Some("hellbovine".to_string())
+        } else {
+            None
+        };
         result.push(NamedItem {
             id: get(row, "index").trim().to_string(),
             name: String::new(),
@@ -333,14 +364,28 @@ fn load_set_items(data: &str, base_items_by_code: &HashMap<String, BaseItem>) ->
             required_level: get_i32(row, "lvl req"),
             set_name: get(row, "set").trim().to_string(),
             props: (1..=9)
-                .filter_map(|i| read_props(row, &format!("prop{i}"), &format!("par{i}"), &format!("min{i}"), &format!("max{i}")))
+                .filter_map(|i| {
+                    read_props(
+                        row,
+                        &format!("prop{i}"),
+                        &format!("par{i}"),
+                        &format!("min{i}"),
+                        &format!("max{i}"),
+                    )
+                })
                 .collect(),
             // aprop1a/b apply with 2 items worn, aprop2a/b with 3, and so on.
             set_bonuses: (1..=5)
                 .flat_map(|i| {
                     ["a", "b"].into_iter().filter_map(move |x| {
-                        read_props(row, &format!("aprop{i}{x}"), &format!("apar{i}{x}"), &format!("amin{i}{x}"), &format!("amax{i}{x}"))
-                            .map(|p| (i + 1, p))
+                        read_props(
+                            row,
+                            &format!("aprop{i}{x}"),
+                            &format!("apar{i}{x}"),
+                            &format!("amin{i}{x}"),
+                            &format!("amax{i}{x}"),
+                        )
+                        .map(|p| (i + 1, p))
                     })
                 })
                 .collect(),
@@ -389,22 +434,39 @@ impl ItemDatabase {
             }
         }
 
-        let base_items_by_code: HashMap<String, BaseItem> =
-            base_items.into_iter().map(|i| (i.code.clone(), i)).collect();
+        let base_items_by_code: HashMap<String, BaseItem> = base_items
+            .into_iter()
+            .map(|i| (i.code.clone(), i))
+            .collect();
 
         let item_ratios = load_item_ratios(itemratio_txt);
 
         let named = |mut item: NamedItem| {
-            item.name = item_names.get(&item.id).cloned().unwrap_or_else(|| item.id.clone());
+            item.name = item_names
+                .get(&item.id)
+                .cloned()
+                .unwrap_or_else(|| item.id.clone());
             item
         };
         let mut unique_items_by_base_code: HashMap<String, Vec<NamedItem>> = HashMap::new();
-        for item in load_unique_items(uniqueitems_txt, &base_items_by_code).into_iter().map(named) {
-            unique_items_by_base_code.entry(item.base_code.clone()).or_default().push(item);
+        for item in load_unique_items(uniqueitems_txt, &base_items_by_code)
+            .into_iter()
+            .map(named)
+        {
+            unique_items_by_base_code
+                .entry(item.base_code.clone())
+                .or_default()
+                .push(item);
         }
         let mut set_items_by_base_code: HashMap<String, Vec<NamedItem>> = HashMap::new();
-        for item in load_set_items(setitems_txt, &base_items_by_code).into_iter().map(named) {
-            set_items_by_base_code.entry(item.base_code.clone()).or_default().push(item);
+        for item in load_set_items(setitems_txt, &base_items_by_code)
+            .into_iter()
+            .map(named)
+        {
+            set_items_by_base_code
+                .entry(item.base_code.clone())
+                .or_default()
+                .push(item);
         }
 
         ItemDatabase {
@@ -422,7 +484,9 @@ impl ItemDatabase {
         self.item_ratios
             .iter()
             .find(|r| r.is_uber == is_uber && r.is_class_specific == base_item.is_class_specific)
-            .expect("itemratio.txt should have a row for every (isUber, isClassSpecific) combination")
+            .expect(
+                "itemratio.txt should have a row for every (isUber, isClassSpecific) combination",
+            )
     }
 
     pub fn base_item_display_name(&self, base_item: &BaseItem) -> String {
@@ -430,7 +494,11 @@ impl ItemDatabase {
             .get(&base_item.name_str)
             .cloned()
             .unwrap_or_else(|| {
-                if base_item.raw_name.is_empty() { base_item.name_str.clone() } else { base_item.raw_name.clone() }
+                if base_item.raw_name.is_empty() {
+                    base_item.name_str.clone()
+                } else {
+                    base_item.raw_name.clone()
+                }
             })
     }
 
