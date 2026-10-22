@@ -1,0 +1,3 @@
+# Keeps the Cloudflare Pages preview hostnames out of search results so that only d2-drop-calc.iyican.me is indexed.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex

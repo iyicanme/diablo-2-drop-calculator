@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://d2-drop-calc.iyican.me/sitemap.xml
