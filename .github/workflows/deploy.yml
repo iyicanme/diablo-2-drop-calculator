@@ -1,0 +1,64 @@
+# Builds the wasm engine and publishes web/ to Cloudflare Pages on every push to master.
+#
+# Needs two repository secrets:
+#   CLOUDFLARE_API_TOKEN   an API token with the "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID  the ID of the Cloudflare account that holds the Pages project
+name: Deploy web
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push replaces a deploy still in progress.
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+env:
+  PROJECT_NAME: d2-drop-calc
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Only GitHub's own actions are used, so no third-party code runs where the Cloudflare token is available.
+      # The runner image comes with rustup.
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            target
+          key: build-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: build-${{ runner.os }}-
+
+      - name: Build
+        run: ./build-web.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # The first run creates the project.
+          if ! npx --yes wrangler@4 pages project list | grep -qw "$PROJECT_NAME"; then
+            npx --yes wrangler@4 pages project create "$PROJECT_NAME" --production-branch master
+          fi
+          npx --yes wrangler@4 pages deploy web --project-name "$PROJECT_NAME" --branch master \
+            --commit-hash "$GITHUB_SHA" --commit-message "$(git log -1 --format=%s)"
