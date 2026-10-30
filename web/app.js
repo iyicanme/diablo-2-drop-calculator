@@ -21,7 +21,7 @@ const CATEGORIES = [
 // are filtered from the header bar instead; treasure class and raw drop chance aren't shown.
 // `width` is the minimum in px; columns with `grow` share the leftover table width in that ratio,
 // so the table fits the window and only scrolls sideways below the sum of the minimums.
-const COLUMNS = [
+const MONSTER_COLUMNS = [
   { id: 'monster', label: 'Monster', type: 'text', width: 150, grow: 3 },
   { id: 'monsterType', label: 'Monster Type', csv: 'Monster Type', type: 'enum', width: 116 },
   { id: 'location', label: 'Location', type: 'text', width: 150, grow: 3 },
@@ -35,6 +35,24 @@ const COLUMNS = [
   { id: 'perX', label: '1 in X', csv: 'Chance (1 in X)', type: 'max', width: 130, grow: 1, align: 'num' },
 ];
 
+// Per-area rows have no single monster; their chance is per clear of the whole area.
+const AREA_COLUMNS = [
+  { id: 'location', label: 'Area', csv: 'Location', type: 'text', width: 170, grow: 3 },
+  ...MONSTER_COLUMNS.filter((c) => ['act', 'difficulty', 'terrorized', 'item', 'itemType', 'tier', 'quality'].includes(c.id)),
+  { id: 'perX', label: '1 in X clears', csv: 'Chance per clear (1 in X)', type: 'max', width: 130, grow: 1, align: 'num' },
+];
+
+const VIEWS = [
+  { id: 'monster', label: 'Per monster', title: 'Chance of each drop from a single kill', columns: MONSTER_COLUMNS, file: '' },
+  {
+    id: 'area',
+    label: 'Per area',
+    title: 'Chance of each drop from clearing a whole area once, over all the monsters it spawns on average',
+    columns: AREA_COLUMNS,
+    file: 'area_',
+  },
+];
+
 // Bits 1-6 of the `flags` column (src/wasm.rs).
 const IMMUNITIES = ['fire', 'cold', 'lightning', 'poison', 'magic', 'physical'];
 const STRING_COLUMN_IDS = new Set(['monster', 'monsterType', 'location', 'difficulty', 'item', 'tc', 'itemType', 'tier', 'quality']);
@@ -42,6 +60,7 @@ const STRING_COLUMN_IDS = new Set(['monster', 'monsterType', 'location', 'diffic
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 const fmtInt = new Intl.NumberFormat();
 const fmtPerX = new Intl.NumberFormat(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtSpawns = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 
 const $ = (sel) => document.querySelector(sel);
 const el = (tag, cls, text) => {
@@ -53,19 +72,31 @@ const el = (tag, cls, text) => {
 
 // ---- state ---------------------------------------------------------------------------------------
 
-let data = null; // { rows, columns, dictionary, dictRank, elapsed, inputs }
+let source = null; // the worker's per-monster rows: { rows, columns, dictionary, dictRank, elapsed, inputs }
+let areaData = null; // per-area rows built from `source` (same shape), or null until needed
+let data = null; // what the table shows: `source` or `areaData`
 let tab = 2;
-let sort = { id: null, dir: 1 }; // dir 1 asc, -1 desc
+// Each view keeps its own sort, filters and caches; the globals below point at the current one's.
+const viewStates = Object.fromEntries(
+  VIEWS.map((v) => [v.id, { sort: { id: null, dir: 1 }, filters: {}, permCache: new Map(), optionCache: new Map() }]),
+);
+let currentView = 'monster';
+try {
+  const saved = localStorage.getItem('drop_calc.view');
+  if (saved in viewStates) currentView = saved;
+} catch {}
+let COLUMNS = VIEWS.find((v) => v.id === currentView).columns;
+let sort = viewStates[currentView].sort; // dir 1 asc, -1 desc
 // text: { text, selected }, enum/flag: { selected }, max: string. `selected` is a Set of dict
 // indices (act number, flag bit for flag columns), or null for no restriction.
-const filters = {};
+let filters = viewStates[currentView].filters;
 let excludedImmunities = 0; // bitmask over `flags`; rows with any of these bits are hidden
 let statFilter = ''; // text searched in item stat lines, set bonuses and rune/gem socket bonuses
 let view = new Uint32Array(0);
 let viewBuf = new Uint32Array(0);
 let categoryCounts = [0, 0, 0];
-const permCache = new Map();
-const optionCache = new Map(); // `${column}:${tab}` -> [value, label] pairs present in that tab
+let permCache = viewStates[currentView].permCache;
+let optionCache = viewStates[currentView].optionCache; // `${column}:${tab}` -> [value, label] pairs present in that tab
 
 // ---- inputs & worker -----------------------------------------------------------------------------
 
@@ -104,7 +135,10 @@ for (const box of immunityBoxes) {
     try {
       localStorage.setItem('drop_calc.immunities', JSON.stringify(immunityBoxes.filter((b) => b.checked).map((b) => b.name)));
     } catch {}
-    refresh();
+    // Per-area chances leave the hidden monsters out, so they're rebuilt.
+    areaData = null;
+    if (currentView === 'area') showView('area');
+    else refresh();
   });
 }
 
@@ -137,16 +171,15 @@ worker.onmessage = ({ data: msg }) => {
   for (const c of msg.columns.category) categoryTotals[c]++;
   // Lowercased stat lines per item for the item-stats filter. Plain base items have none.
   const itemStats = msg.details.items.map((it) => statLines(it).join('\n').toLowerCase());
-  if (data) remapSelections(data.dictionary, msg.dictionary);
-  data = { ...msg, dictRank, categoryTotals, itemStats, inputs: worker.inputs };
-  permCache.clear();
-  optionCache.clear();
-  closePicker();
-  hideCard();
-  viewBuf = new Uint32Array(data.rows);
-  buildFilterRow();
+  if (source) remapSelections(source.dictionary, msg.dictionary);
+  source = { ...msg, dictRank, categoryTotals, itemStats, inputs: worker.inputs };
+  areaData = null;
+  for (const s of Object.values(viewStates)) {
+    s.permCache.clear();
+    s.optionCache.clear();
+  }
   setBusy(false);
-  refresh();
+  showView(currentView);
 };
 worker.onerror = (e) => {
   setBusy(false);
@@ -156,12 +189,108 @@ worker.onerror = (e) => {
 /** Dictionary indices change between runs, so carry picked string values over by text. */
 function remapSelections(oldDict, newDict) {
   const index = new Map(newDict.map((s, d) => [s, d]));
-  for (const c of COLUMNS) {
-    const f = filters[c.id];
-    if (!f?.selected || !STRING_COLUMN_IDS.has(c.id)) continue;
-    const next = [...f.selected].map((d) => index.get(oldDict[d])).filter((d) => d != null);
-    f.selected = next.length ? new Set(next) : null;
+  for (const v of VIEWS) {
+    const filters = viewStates[v.id].filters;
+    for (const c of v.columns) {
+      const f = filters[c.id];
+      if (!f?.selected || !STRING_COLUMN_IDS.has(c.id)) continue;
+      const next = [...f.selected].map((d) => index.get(oldDict[d])).filter((d) => d != null);
+      f.selected = next.length ? new Set(next) : null;
+    }
   }
+}
+
+// ---- views ---------------------------------------------------------------------------------------
+
+/** Switches the table to view `id` (also used to re-show the current view after new data). */
+function showView(id) {
+  closePicker();
+  hideCard();
+  viewStates[currentView].sort = sort;
+  currentView = id;
+  try {
+    localStorage.setItem('drop_calc.view', id);
+  } catch {}
+  ({ sort, filters, permCache, optionCache } = viewStates[id]);
+  COLUMNS = VIEWS.find((v) => v.id === id).columns;
+  if (id === 'area' && source && !areaData) {
+    areaData = buildAreaData(source);
+    permCache.clear();
+    optionCache.clear();
+  }
+  data = id === 'area' ? areaData : source;
+  viewBuf = new Uint32Array(data ? data.rows : 0);
+  buildSkeleton();
+  if (data) buildFilterRow();
+  refresh();
+}
+
+/**
+ * Per-area rows: for each area, difficulty, terrorized and item, the chance that clearing the area
+ * once drops the item at least once, 1 - Π(1 - p)^n over its monsters (p per kill, n the expected
+ * spawns per clear). Monsters with an excluded immunity are left out, as if skipped.
+ */
+function buildAreaData(src) {
+  const { columns: c, rows: n, dictionary } = src;
+  const nItems = src.details.items.length;
+  const difficultySlot = new Uint8Array(dictionary.length);
+  ['Normal', 'Nightmare', 'Hell'].forEach((d, i) => {
+    const k = dictionary.indexOf(d);
+    if (k >= 0) difficultySlot[k] = i;
+  });
+  // One slot per (area, difficulty, terrorized, item): the summed -ln(1 - p) and its first row.
+  const size = src.details.areas.length * 6 * nItems;
+  const hazard = new Float64Array(size);
+  const first = new Int32Array(size).fill(-1);
+  // `${areaRef}:${difficulty}:${terrorized}` -> Map(monster label -> expected spawns), for the area card.
+  const monsters = new Map();
+  let prev = -1;
+  for (let r = 0; r < n; r++) {
+    const spawns = c.spawns[r];
+    if (!(spawns > 0) || c.flags[r] & excludedImmunities) continue;
+    const terrorized = c.flags[r] & 1;
+    const k = ((c.areaRef[r] * 3 + difficultySlot[c.difficulty[r]]) * 2 + terrorized) * nItems + c.itemRef[r];
+    hazard[k] -= spawns * Math.log1p(-Math.min(c.chance[r], 1 - 1e-12));
+    if (first[k] < 0) first[k] = r;
+    // A monster's rows are contiguous, so count it on its first one.
+    const sameMonster =
+      prev >= 0 &&
+      c.monsterRef[prev] === c.monsterRef[r] &&
+      c.monsterType[prev] === c.monsterType[r] &&
+      c.areaRef[prev] === c.areaRef[r] &&
+      c.difficulty[prev] === c.difficulty[r] &&
+      c.level[prev] === c.level[r] &&
+      (c.flags[prev] & 1) === terrorized;
+    prev = r;
+    if (sameMonster) continue;
+    const key = `${c.areaRef[r]}:${c.difficulty[r]}:${terrorized}`;
+    let list = monsters.get(key);
+    if (!list) monsters.set(key, (list = new Map()));
+    const type = dictionary[c.monsterType[r]];
+    const label = type === 'Regular' ? dictionary[c.monster[r]] : `${dictionary[c.monster[r]]} (${type.toLowerCase()})`;
+    list.set(label, (list.get(label) || 0) + spawns);
+  }
+
+  let rows = 0;
+  for (let k = 0; k < size; k++) if (first[k] >= 0) rows++;
+  // `flags` keeps only the terrorized bit: the immunity filter was applied above, per monster.
+  const columns = { act: new Uint8Array(rows), flags: new Uint8Array(rows), category: new Uint8Array(rows), chance: new Float64Array(rows) };
+  const copied = ['location', 'difficulty', 'item', 'itemType', 'tier', 'quality', 'areaRef', 'itemRef'];
+  for (const id of copied) columns[id] = new Uint16Array(rows);
+  const categoryTotals = [0, 0, 0];
+  let i = 0;
+  for (let k = 0; k < size; k++) {
+    const r = first[k];
+    if (r < 0) continue;
+    for (const id of copied) columns[id][i] = c[id][r];
+    columns.act[i] = c.act[r];
+    columns.flags[i] = c.flags[r] & 1;
+    columns.category[i] = c.category[r];
+    columns.chance[i] = -Math.expm1(-hazard[k]);
+    categoryTotals[c.category[r]]++;
+    i++;
+  }
+  return { ...src, rows, columns, categoryTotals, monsters };
 }
 
 function setBusy(busy, message) {
@@ -185,19 +314,27 @@ const body = $('#body');
 const spacer = $('#spacer');
 const emptyMsg = $('#empty');
 
-const template = COLUMNS.map((c) => (c.grow ? `minmax(${c.width}px, ${c.grow}fr)` : `${c.width}px`)).join(' ');
-table.style.setProperty('--cols', template);
 table.style.setProperty('--row-h', `${ROW_H}px`);
-table.style.minWidth = `${COLUMNS.reduce((s, c) => s + c.width, 0)}px`;
 
-for (const c of COLUMNS) {
-  const h = el('button', `th ${c.align || ''}`);
-  h.type = 'button';
-  h.title = `Sort by ${c.csv || c.label}`;
-  h.append(el('span', 'th-label', c.label), el('span', 'sort-ind'));
-  h.addEventListener('click', () => onSort(c.id));
-  h.dataset.id = c.id;
-  headRow.append(h);
+/** Column template, header and (empty) filter row for the current view's columns. */
+function buildSkeleton() {
+  const template = COLUMNS.map((c) => (c.grow ? `minmax(${c.width}px, ${c.grow}fr)` : `${c.width}px`)).join(' ');
+  table.style.setProperty('--cols', template);
+  table.style.minWidth = `${COLUMNS.reduce((s, c) => s + c.width, 0)}px`;
+  headRow.replaceChildren();
+  filterRow.replaceChildren();
+  for (const c of COLUMNS) {
+    const h = el('button', `th ${c.align || ''}`);
+    h.type = 'button';
+    h.title = `Sort by ${c.csv || c.label}`;
+    h.append(el('span', 'th-label', c.label), el('span', 'sort-ind'));
+    h.addEventListener('click', () => onSort(c.id));
+    h.dataset.id = c.id;
+    headRow.append(h);
+  }
+  // Pooled rows have one cell per column, so they go too.
+  for (const row of rowPool) row.remove();
+  rowPool.length = 0;
 }
 
 function debounce(fn, ms) {
@@ -685,6 +822,20 @@ function renderChrome() {
     h.querySelector('.sort-ind').textContent = active ? (sort.dir > 0 ? '▲' : '▼') : '';
   }
 
+  const views = $('#views');
+  views.replaceChildren();
+  for (const v of VIEWS) {
+    const b = el('button', 'tab view-tab', v.label);
+    b.type = 'button';
+    b.title = v.title;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(v.id === currentView));
+    b.addEventListener('click', () => {
+      if (v.id !== currentView) showView(v.id);
+    });
+    views.append(b);
+  }
+
   const tabs = $('#tabs');
   tabs.replaceChildren();
   for (const t of CATEGORIES) {
@@ -714,6 +865,7 @@ function renderChrome() {
         (excludedImmunities
           ? ` · hiding ${IMMUNITIES.filter((_, i) => excludedImmunities & (1 << (i + 1))).join(', ')} immune`
           : '') +
+        (currentView === 'area' ? ' · chances per full clear' : '') +
         ` · computed in ${(data.elapsed / 1000).toFixed(1)}s`,
     );
   }
@@ -898,7 +1050,7 @@ function monsterCard(r) {
 function locationCard(r) {
   const a = data.details.areas[data.columns.areaRef[r]];
   if (!a) return [el('div', 'hc-sub', 'No details available.')];
-  const { difficulty } = rowContext(r);
+  const difficulty = data.dictionary[data.columns.difficulty[r]];
   const packs = a.uniquePacks[difficulty];
   const out = [
     cardHead(a.name, `Act ${a.act} · ${difficulty}`),
@@ -908,6 +1060,18 @@ function locationCard(r) {
     ]),
   ];
   if (a.superuniques.length) out.push(section('Super uniques', el('div', 'hc-list', a.superuniques.join(', '))));
+  // Per-area rows: what a clear spawns on average, which their chances are built from.
+  const spawned = data.monsters?.get(`${data.columns.areaRef[r]}:${data.columns.difficulty[r]}:${data.columns.flags[r] & 1}`);
+  if (spawned) {
+    const list = el('ul', 'hc-props');
+    const sorted = [...spawned].sort((x, y) => y[1] - x[1]);
+    for (const [name, n] of sorted.slice(0, MAX_LISTED_MONSTERS)) list.append(el('li', null, `${fmtSpawns.format(n)} × ${name}`));
+    if (sorted.length > MAX_LISTED_MONSTERS) list.append(el('li', null, `+${sorted.length - MAX_LISTED_MONSTERS} more`));
+    const total = sorted.reduce((s, [, n]) => s + n, 0);
+    out.push(section(`Monsters per clear (about ${fmtInt.format(Math.round(total))})`, list));
+    if (excludedImmunities) out.push(el('div', 'hc-note', 'Leaves out the immune monsters you filtered out.'));
+    return out;
+  }
   const monsters = a.monsters[difficulty] || [];
   if (monsters.length) {
     const shown = monsters.slice(0, MAX_LISTED_MONSTERS).join(', ');
@@ -987,9 +1151,9 @@ $('#download').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob(chunks, { type: 'text/csv' }));
   const a = el('a');
   a.href = url;
-  a.download = `${CATEGORIES.find((t) => t.id === tab).file}.csv`;
+  a.download = `${VIEWS.find((v) => v.id === currentView).file}${CATEGORIES.find((t) => t.id === tab).file}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 });
 
-render();
+showView(currentView);

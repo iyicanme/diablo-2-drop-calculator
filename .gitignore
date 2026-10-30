@@ -1,3 +1,4 @@
 /.idea
 /target
 /web/drop_calc.wasm
+__pycache__/

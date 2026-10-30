@@ -8,6 +8,8 @@ pub struct SuperUnique {
     pub monster_class_id: String,
     pub area_id: String,
     pub has_minions: bool,
+    /// Average minion count, (`MinGrp` + `MaxGrp`) / 2.
+    pub average_minions: f64,
     pub treasure_classes: HashMap<(Difficulty, TreasureClassType), String>,
 }
 
@@ -130,7 +132,9 @@ pub fn load_superuniques(
         let id = get(row, "Superunique").to_string();
         let name = get(row, "Name").trim().to_string();
         let monster_class_id = get(row, "Class").to_string();
-        let has_minions = get_i32(row, "MaxGrp").unwrap_or(0) > 0;
+        let max_group = get_i32(row, "MaxGrp").unwrap_or(0);
+        let has_minions = max_group > 0;
+        let average_minions = (get_i32(row, "MinGrp").unwrap_or(0) + max_group) as f64 / 2.0;
         let normal_tc = get(row, "TC");
         let Some(area_id) = areas_by_superunique_id.get(id.as_str()) else {
             continue;
@@ -181,6 +185,7 @@ pub fn load_superuniques(
             monster_class_id,
             area_id: area_id.to_string(),
             has_minions,
+            average_minions,
             treasure_classes,
         });
     }

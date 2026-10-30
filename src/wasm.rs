@@ -37,6 +37,7 @@ const AREA_REF: usize = 15;
 const ITEM_REF: usize = 16;
 const LEVEL: usize = 17;
 const DETAILS: usize = 18;
+const SPAWNS: usize = 19;
 
 /// Distinct keys in first-seen order, with u16 indices.
 #[derive(Default)]
@@ -73,6 +74,8 @@ struct Output {
     refs: [Interner; 3],
     ref_columns: [Vec<u16>; 3],
     level: Vec<u8>,
+    /// Expected spawns per area clear (`DropRow::spawns`).
+    spawns: Vec<f32>,
     details_json: String,
 }
 
@@ -128,6 +131,7 @@ impl Output {
             self.ref_columns[i].push(index);
         }
         self.level.push(row.monster_level.clamp(0, 255) as u8);
+        self.spawns.push(row.spawns as f32);
     }
 
     fn column_bytes(&self, column: usize) -> &[u8] {
@@ -147,6 +151,7 @@ impl Output {
             ITEM_REF => bytes(&self.ref_columns[2]),
             LEVEL => &self.level,
             DETAILS => self.details_json.as_bytes(),
+            SPAWNS => bytes(&self.spawns),
             _ => &[],
         }
     }

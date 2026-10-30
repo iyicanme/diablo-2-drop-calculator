@@ -14,3 +14,7 @@ The display-only files used for the web app's hover cards — `monlvl.json`, `pr
 `skills.json`, `skilldesc.json`, `localestrings-eng.json` and `gems.json` — are the same D2R 3.0 game data,
 taken in JSON form from the `blizzhackers/d2data` GitHub repository (MIT-licensed tooling; the
 data itself remains Blizzard's). Same personal, non-commercial terms as above.
+
+`area_monsters.tsv` (expected monsters of each kind per area clear) is generated from a local D2R
+install's own tables by `tools/gen_area_monsters.py`; see `tools/README.md` and that script for the
+spawn rules it models and the assumptions it makes.

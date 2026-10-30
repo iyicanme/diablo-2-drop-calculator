@@ -27,6 +27,9 @@ pub struct DropRow {
     /// `u:<unique id>`, `s:<set item id>` or `b:<base item code>`.
     pub item_key: String,
     pub monster_level: i32,
+    /// Expected number of this monster (of this type, in this area and difficulty) per area clear;
+    /// 0 when `area_monsters.tsv` has no count for it. The web app sums drops over an area with it.
+    pub spawns: f64,
 }
 
 const HEADER: [&str; 19] = [

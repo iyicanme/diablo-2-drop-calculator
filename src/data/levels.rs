@@ -7,6 +7,8 @@ pub struct Area {
     pub id: String,
     /// Human-readable name (the `LevelName` column) — what the user wants in the CSV.
     pub display_name: String,
+    /// The `Id` column, which `area_monsters.tsv` is keyed by.
+    pub level_id: i32,
     pub act: i32,
     pub monster_levels: HashMap<Difficulty, i32>,
     pub monster_class_ids: HashMap<(Difficulty, MonsterType), HashSet<String>>,
@@ -45,6 +47,7 @@ pub fn load_areas(
         if display_name.is_empty() {
             continue;
         }
+        let level_id = get_i32(row, "Id").unwrap_or(-1);
         let act = get_i32(row, "Act").unwrap_or(0) + 1;
 
         let mut monster_levels = HashMap::new();
@@ -154,6 +157,7 @@ pub fn load_areas(
             Area {
                 id,
                 display_name,
+                level_id,
                 act,
                 monster_levels,
                 monster_class_ids,

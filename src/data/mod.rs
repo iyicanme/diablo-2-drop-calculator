@@ -1,3 +1,4 @@
+pub mod area_monsters;
 pub mod items;
 pub mod levels;
 pub mod monsters;
@@ -8,6 +9,7 @@ pub mod super_uniques;
 pub mod treasure_class;
 
 use crate::model::Difficulty;
+use area_monsters::AreaSpawns;
 use items::ItemDatabase;
 use levels::Area;
 use monsters::MonsterClass;
@@ -26,6 +28,7 @@ const ITEMTYPES_TXT: &str = include_str!("../../data/itemtypes.txt");
 const ITEMRATIO_TXT: &str = include_str!("../../data/itemratio.txt");
 const UNIQUEITEMS_TXT: &str = include_str!("../../data/uniqueitems.txt");
 const SETITEMS_TXT: &str = include_str!("../../data/setitems.txt");
+const AREA_MONSTERS_TSV: &str = include_str!("../../data/area_monsters.tsv");
 
 const MONSTERS_JSON: &str = include_str!("../../data/monsters.json");
 const ITEM_NAMES_JSON: &str = include_str!("../../data/item-names.json");
@@ -47,6 +50,8 @@ pub struct GameData {
     pub treasure_classes: TreasureClassLibrary,
     pub items: ItemDatabase,
     pub monster_names: HashMap<String, String>,
+    /// Expected monsters per area clear, for the per-area drop view.
+    pub area_spawns: AreaSpawns,
 }
 
 /// Per-level base life and experience (monlvl.json's expansion `L-` columns), which monstats.txt's
@@ -171,6 +176,9 @@ impl GameData {
             item_names,
         );
 
+        let area_spawns = AreaSpawns::load(AREA_MONSTERS_TSV);
+        area_spawns.add_unlisted_monsters(&mut areas, &monster_classes);
+
         let monster_names = strings::load_string_table(MONSTERS_JSON);
 
         // levels.txt / superuniques.txt hold string keys, not the names the game shows (e.g. the
@@ -194,6 +202,7 @@ impl GameData {
             treasure_classes,
             items,
             monster_names,
+            area_spawns,
         }
     }
 

@@ -233,6 +233,31 @@ button.secondary {
   color: var(--text);
 }
 
+.tab-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* Per monster / per area: a segmented switch, set apart from the category tabs. */
+.views {
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.view-tab {
+  border-radius: 6px;
+}
+
+.view-tab[aria-selected='true'] {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
 .tab .count {
   font-size: 12px;
   font-variant-numeric: tabular-nums;

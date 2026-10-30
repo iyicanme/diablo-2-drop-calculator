@@ -26,6 +26,22 @@ fn desecrated_type_for(tc_type: TreasureClassType) -> Option<TreasureClassType> 
     }
 }
 
+/// The treasure class a terrorized monster rolls at `level`: its desecrated TC of that kind where
+/// it has one (only the act bosses and a few other named monsters do), otherwise its normal one,
+/// either way upgraded to the terrorized level. `None` if it has neither.
+fn terrorized_tc(
+    game_data: &GameData,
+    treasure_classes: &HashMap<(Difficulty, TreasureClassType), String>,
+    difficulty: Difficulty,
+    tc_type: TreasureClassType,
+    level: i32,
+) -> Option<String> {
+    let base = desecrated_type_for(tc_type)
+        .and_then(|t| treasure_classes.get(&(difficulty, t)))
+        .or_else(|| treasure_classes.get(&(difficulty, tc_type)))?;
+    Some(game_data.treasure_classes.upgrade_for_level(base, level))
+}
+
 fn compute_level(
     monster_class: &MonsterClass,
     difficulty: Difficulty,
@@ -62,6 +78,126 @@ fn minion_level(leader: &MonsterClass, difficulty: Difficulty, area: &Area) -> i
 /// (e.g. Fallen and Fallen Shaman packs both bring Fallen), which would just duplicate rows.
 type MinionKey = (String, String, Difficulty, bool, i32);
 
+/// A unique pack leader brings 3-6 minions.
+const UNIQUE_PACK_MINIONS: f64 = 4.5;
+
+/// Expected number of a monster (a monstats id, or a superunique's id) per clear of `area`, from
+/// `area_monsters.tsv`. Minions are counted per row by `minion_spawns` instead.
+fn spawns_per_clear(
+    game_data: &GameData,
+    monster: &str,
+    monster_type: MonsterType,
+    area: &Area,
+    difficulty: Difficulty,
+) -> f64 {
+    let kind = match monster_type {
+        MonsterType::Regular => "normal",
+        MonsterType::Champion => "champion",
+        MonsterType::Unique => "unique",
+        MonsterType::Boss => "boss",
+        MonsterType::SuperUnique => "superunique",
+        MonsterType::Minion => return 0.0,
+    };
+    game_data
+        .area_spawns
+        .get(area.level_id, difficulty, monster, kind)
+}
+
+/// Expected spawns per clear of each minion row `process_minions` emits. The table counts minions
+/// per class, but leaders of different levels give the same class separate rows, so a class's
+/// count is split between its rows in proportion to how many minions each leader brings. Like the
+/// table, a leader's minions are all of its first minion class.
+fn minion_spawns(game_data: &GameData, config: &Config) -> HashMap<MinionKey, f64> {
+    // (minion class, area, difficulty) -> [(minion level, leader's expected minions)]
+    let mut leaders: HashMap<(String, String, Difficulty), Vec<(i32, f64)>> = HashMap::new();
+    let mut add = |leader: &MonsterClass, area: &Area, difficulty, minions: f64| {
+        if let Some(minion) = leader.minion_ids.first() {
+            leaders
+                .entry((minion.clone(), area.id.clone(), difficulty))
+                .or_default()
+                .push((minion_level(leader, difficulty, area), minions));
+        }
+    };
+    for area in game_data.areas.values() {
+        for difficulty in Difficulty::ALL {
+            for id in area
+                .monster_class_ids
+                .get(&(difficulty, MonsterType::Unique))
+                .into_iter()
+                .flatten()
+            {
+                let Some(leader) = game_data.monster_classes.get(id) else {
+                    continue;
+                };
+                if leader
+                    .treasure_classes
+                    .contains_key(&(difficulty, TreasureClassType::Unique))
+                {
+                    let packs =
+                        spawns_per_clear(game_data, id, MonsterType::Unique, area, difficulty);
+                    add(leader, area, difficulty, packs * UNIQUE_PACK_MINIONS);
+                }
+            }
+        }
+    }
+    for superunique in game_data.superuniques.iter().filter(|s| s.has_minions) {
+        let (Some(leader), Some(area)) = (
+            game_data.monster_classes.get(&superunique.monster_class_id),
+            game_data.areas.get(&superunique.area_id),
+        ) else {
+            continue;
+        };
+        for difficulty in Difficulty::ALL {
+            if superunique
+                .treasure_classes
+                .contains_key(&(difficulty, TreasureClassType::Regular))
+            {
+                let n = spawns_per_clear(
+                    game_data,
+                    &superunique.id,
+                    MonsterType::SuperUnique,
+                    area,
+                    difficulty,
+                );
+                add(leader, area, difficulty, n * superunique.average_minions);
+            }
+        }
+    }
+
+    let mut result: HashMap<MinionKey, f64> = HashMap::new();
+    for ((minion, area_id, difficulty), levels) in leaders {
+        let area = &game_data.areas[&area_id];
+        let total: f64 = levels.iter().map(|(_, n)| n).sum();
+        if total <= 0.0 {
+            continue;
+        }
+        let count = game_data
+            .area_spawns
+            .get(area.level_id, difficulty, &minion, "minion");
+        for (level, n) in levels {
+            let share = count * n / total;
+            let d_level = terror::desecrated_level(
+                MonsterType::Minion,
+                difficulty,
+                level,
+                config.character_level,
+            );
+            for (terrorized, level) in [(false, level), (true, d_level)] {
+                *result
+                    .entry((
+                        minion.clone(),
+                        area.id.clone(),
+                        difficulty,
+                        terrorized,
+                        level,
+                    ))
+                    .or_default() += share;
+            }
+        }
+    }
+    result
+}
+
 #[allow(clippy::too_many_arguments)]
 fn process_minions(
     game_data: &GameData,
@@ -70,6 +206,7 @@ fn process_minions(
     area: &Area,
     difficulty: Difficulty,
     seen: &mut HashSet<MinionKey>,
+    minion_spawns: &HashMap<MinionKey, f64>,
     tc_cache: &mut HashMap<String, HashMap<String, (f64, QualityRatios)>>,
     emit: &mut dyn FnMut(DropRow),
 ) {
@@ -88,7 +225,9 @@ fn process_minions(
             .treasure_classes
             .get(&(difficulty, TreasureClassType::Regular))
         {
-            if seen.insert((minion.id.clone(), area.id.clone(), difficulty, false, level)) {
+            let key = (minion.id.clone(), area.id.clone(), difficulty, false, level);
+            let spawns = minion_spawns.get(&key).copied().unwrap_or(0.0);
+            if seen.insert(key) {
                 let instance = MonsterInstance {
                     display_name: display_name.clone(),
                     monster_class_id: minion.id.clone(),
@@ -102,30 +241,34 @@ fn process_minions(
                     resolved_tc: game_data
                         .treasure_classes
                         .resolved_tc_for_monster(base_tc, level, difficulty, false),
+                    spawns,
                 };
                 process_instance(game_data, config, config.players, &instance, tc_cache, emit);
             }
         }
 
-        // Terrorized minions follow the same rule as other monsters here: only classes with a
-        // desecrated TC get a Terror Zone row.
-        if let Some(desecrated_base) = minion
-            .treasure_classes
-            .get(&(difficulty, TreasureClassType::DesecratedRegular))
-        {
-            let d_level = terror::desecrated_level(
-                MonsterType::Minion,
-                difficulty,
-                level,
-                config.character_level,
-            );
-            if seen.insert((
+        let d_level = terror::desecrated_level(
+            MonsterType::Minion,
+            difficulty,
+            level,
+            config.character_level,
+        );
+        if let Some(resolved_tc) = terrorized_tc(
+            game_data,
+            &minion.treasure_classes,
+            difficulty,
+            TreasureClassType::Regular,
+            d_level,
+        ) {
+            let key = (
                 minion.id.clone(),
                 area.id.clone(),
                 difficulty,
                 true,
                 d_level,
-            )) {
+            );
+            let spawns = minion_spawns.get(&key).copied().unwrap_or(0.0);
+            if seen.insert(key) {
                 let instance = MonsterInstance {
                     display_name,
                     monster_class_id: minion.id.clone(),
@@ -136,9 +279,8 @@ fn process_minions(
                     resistances,
                     terrorized: true,
                     level: d_level,
-                    resolved_tc: game_data
-                        .treasure_classes
-                        .upgrade_for_level(desecrated_base, d_level),
+                    resolved_tc,
+                    spawns,
                 };
                 process_instance(game_data, config, config.players, &instance, tc_cache, emit);
             }
@@ -162,6 +304,8 @@ struct MonsterInstance<'a> {
     terrorized: bool,
     level: i32,
     resolved_tc: String,
+    /// See `DropRow::spawns`.
+    spawns: f64,
 }
 
 pub fn generate(game_data: &GameData, config: &Config) -> Vec<DropRow> {
@@ -177,6 +321,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
     let party_size = config.players;
     let mut tc_cache: HashMap<String, HashMap<String, (f64, QualityRatios)>> = HashMap::new();
     let mut seen_minions: HashSet<MinionKey> = HashSet::new();
+    let minion_spawns = minion_spawns(game_data, config);
 
     // Reverse index: (monster_class_id, difficulty, monster_type) -> areas it spawns in.
     let mut areas_by_monster: HashMap<(&str, Difficulty, MonsterType), Vec<&Area>> = HashMap::new();
@@ -218,6 +363,13 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                         .resistances
                         .get(&difficulty)
                         .unwrap_or(&Resistances::default());
+                    let spawns = spawns_per_clear(
+                        game_data,
+                        &monster_class.id,
+                        monster_type,
+                        area,
+                        difficulty,
+                    );
 
                     let instance = MonsterInstance {
                         display_name: display_name.clone(),
@@ -230,6 +382,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                         terrorized: false,
                         level,
                         resolved_tc,
+                        spawns,
                     };
                     process_instance(
                         game_data,
@@ -240,41 +393,40 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                         emit,
                     );
 
-                    if let Some(desecrated_type) = desecrated_type_for(tc_type) {
-                        if let Some(desecrated_base) = monster_class
-                            .treasure_classes
-                            .get(&(difficulty, desecrated_type))
-                        {
-                            let d_level = terror::desecrated_level(
-                                monster_type,
-                                difficulty,
-                                level,
-                                config.character_level,
-                            );
-                            let resolved = game_data
-                                .treasure_classes
-                                .upgrade_for_level(desecrated_base, d_level);
-                            let t_instance = MonsterInstance {
-                                display_name: display_name.clone(),
-                                monster_class_id: monster_class.id.clone(),
-                                monster_key: monster_class.id.clone(),
-                                monster_type,
-                                area,
-                                difficulty,
-                                resistances,
-                                terrorized: true,
-                                level: d_level,
-                                resolved_tc: resolved,
-                            };
-                            process_instance(
-                                game_data,
-                                config,
-                                party_size,
-                                &t_instance,
-                                &mut tc_cache,
-                                emit,
-                            );
-                        }
+                    let d_level = terror::desecrated_level(
+                        monster_type,
+                        difficulty,
+                        level,
+                        config.character_level,
+                    );
+                    if let Some(resolved) = terrorized_tc(
+                        game_data,
+                        &monster_class.treasure_classes,
+                        difficulty,
+                        tc_type,
+                        d_level,
+                    ) {
+                        let t_instance = MonsterInstance {
+                            display_name: display_name.clone(),
+                            monster_class_id: monster_class.id.clone(),
+                            monster_key: monster_class.id.clone(),
+                            monster_type,
+                            area,
+                            difficulty,
+                            resistances,
+                            terrorized: true,
+                            level: d_level,
+                            resolved_tc: resolved,
+                            spawns,
+                        };
+                        process_instance(
+                            game_data,
+                            config,
+                            party_size,
+                            &t_instance,
+                            &mut tc_cache,
+                            emit,
+                        );
                     }
 
                     // Unique packs always spawn with minions.
@@ -286,6 +438,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                             area,
                             difficulty,
                             &mut seen_minions,
+                            &minion_spawns,
                             &mut tc_cache,
                             emit,
                         );
@@ -318,6 +471,13 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                 .resistances
                 .get(&difficulty)
                 .unwrap_or(&Resistances::default());
+            let spawns = spawns_per_clear(
+                game_data,
+                &superunique.id,
+                MonsterType::SuperUnique,
+                area,
+                difficulty,
+            );
 
             let instance = MonsterInstance {
                 display_name: superunique.name.clone(),
@@ -330,6 +490,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                 terrorized: false,
                 level,
                 resolved_tc,
+                spawns,
             };
             process_instance(
                 game_data,
@@ -340,19 +501,19 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                 emit,
             );
 
-            if let Some(desecrated_base) = superunique
-                .treasure_classes
-                .get(&(difficulty, TreasureClassType::DesecratedRegular))
-            {
-                let d_level = terror::desecrated_level(
-                    MonsterType::SuperUnique,
-                    difficulty,
-                    level,
-                    config.character_level,
-                );
-                let resolved = game_data
-                    .treasure_classes
-                    .upgrade_for_level(desecrated_base, d_level);
+            let d_level = terror::desecrated_level(
+                MonsterType::SuperUnique,
+                difficulty,
+                level,
+                config.character_level,
+            );
+            if let Some(resolved) = terrorized_tc(
+                game_data,
+                &superunique.treasure_classes,
+                difficulty,
+                TreasureClassType::Regular,
+                d_level,
+            ) {
                 let t_instance = MonsterInstance {
                     display_name: superunique.name.clone(),
                     monster_class_id: monster_class.id.clone(),
@@ -364,6 +525,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                     terrorized: true,
                     level: d_level,
                     resolved_tc: resolved,
+                    spawns,
                 };
                 process_instance(
                     game_data,
@@ -383,6 +545,7 @@ pub fn generate_with(game_data: &GameData, config: &Config, mut emit: impl FnMut
                     area,
                     difficulty,
                     &mut seen_minions,
+                    &minion_spawns,
                     &mut tc_cache,
                     emit,
                 );
@@ -455,6 +618,7 @@ fn process_instance(
         area_id: instance.area.id.clone(),
         item_key: String::new(),
         monster_level: instance.level,
+        spawns: instance.spawns,
     };
 
     for (base_code, (leaf_prob, ratios)) in resolved.iter() {
@@ -601,5 +765,45 @@ fn clone_base(base_row: &DropRow) -> DropRow {
         area_id: base_row.area_id.clone(),
         item_key: base_row.item_key.clone(),
         monster_level: base_row.monster_level,
+        spawns: base_row.spawns,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every spawn in `area_monsters.tsv` should land on at most one monster row (else the
+    /// per-area view double counts it), and nearly all should land on one. The rest are monsters
+    /// that drop nothing (e.g. the Ancients) and the uber areas outside Hell. Terrorized rows the same.
+    #[test]
+    fn area_spawns_land_on_monster_rows_once() {
+        let game_data = GameData::load();
+        let config = Config {
+            players: 1,
+            magic_find: 0,
+            character_level: 99,
+        };
+        let mut instances = HashSet::new();
+        // Indexed by `terrorized`: a Terror Zone spawns the same monsters.
+        let mut attributed = [0.0; 2];
+        generate_with(&game_data, &config, |row| {
+            let instance = (
+                row.monster_key.clone(),
+                row.monster_type,
+                row.area_id.clone(),
+                row.difficulty,
+                row.terrorized,
+                row.monster_level,
+            );
+            if instances.insert(instance) {
+                attributed[row.terrorized as usize] += row.spawns;
+            }
+        });
+        let total: f64 = game_data.area_spawns.iter().map(|(_, n)| n).sum();
+        for attributed in attributed {
+            assert!(attributed <= total + 1e-6, "{attributed} > {total}");
+            assert!(attributed > total * 0.96, "{attributed} of {total}");
+        }
     }
 }

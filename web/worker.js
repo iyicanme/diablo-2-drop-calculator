@@ -9,7 +9,7 @@ const modulePromise = WebAssembly.compileStreaming(fetch('drop_calc.wasm')).catc
 // Column order matches src/wasm.rs.
 const STRING_COLUMNS = ['monster', 'location', 'difficulty', 'item', 'tc', 'itemType', 'tier', 'quality', 'monsterType'];
 const ACT = 9, FLAGS = 10, CATEGORY = 11, CHANCE = 12, DICTIONARY = 13;
-const MONSTER_REF = 14, AREA_REF = 15, ITEM_REF = 16, LEVEL = 17, DETAILS = 18;
+const MONSTER_REF = 14, AREA_REF = 15, ITEM_REF = 16, LEVEL = 17, DETAILS = 18, SPAWNS = 19;
 
 self.onmessage = async ({ data: { players, magicFind, characterLevel } }) => {
   try {
@@ -35,6 +35,8 @@ self.onmessage = async ({ data: { players, magicFind, characterLevel } }) => {
     columns.areaRef = new Uint16Array(copy(AREA_REF));
     columns.itemRef = new Uint16Array(copy(ITEM_REF));
     columns.level = new Uint8Array(copy(LEVEL));
+    // Expected spawns of the row's monster per clear of its area, for the per-area view.
+    columns.spawns = new Float32Array(copy(SPAWNS));
     const decode = (column) => JSON.parse(new TextDecoder().decode(copy(column)));
     const dictionary = decode(DICTIONARY);
     const details = decode(DETAILS);
