@@ -10,6 +10,15 @@ csv = { version = "1", default-features = false, features = [] }
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 
+# Only the chronicle_tracker binary (src/bin/chronicle_tracker) needs these, and it doesn't run in a
+# browser: the web build (wasm32, --lib) never compiles them.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+anyhow = { version = "1", default-features = false, features = ["std"] }
+clap = { version = "4", default-features = false, features = ["derive", "std", "env", "help", "usage", "error-context"] }
+dirs = { version = "7.0", default-features = false, features = [] }
+notify = { version = "8.2", default-features = false }
+ratatui = { version = "0.30", default-features = false, features = ["crossterm", "unstable-rendered-line-info"] }
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

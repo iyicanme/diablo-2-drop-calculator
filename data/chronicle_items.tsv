@@ -1,0 +1,656 @@
+# Chronicle items for D2R v105 (Reign of the Warlock).
+# rows: setitems.txt / uniqueitems.txt / runes.txt row ids as stored in the Chronicle.
+# Built from blizzhackers/d2data (MIT, set/unique rows and qlvl), @dschu012/d2s v105 constant data (ISC,
+# runeword rows and base items) and the d2r-arcane-tracker grail catalog (MIT, names, sets, runes).
+# Names and set names use the game's English spelling (tools/gen_item_details.py reports any that
+# differ), except the eight Rainbow Facets, which the game all calls "Rainbow Facet".
+# kind	rows	name	base	set	tier	type	runes	qlvl
+set	53	Angelic Wings	Amulet	Angelic Raiment		Amulet		17
+set	52	Angelic Halo	Ring	Angelic Raiment		Ring		17
+set	51	Angelic Mantle	Ring Mail	Angelic Raiment	Normal	Body Armor		17
+set	50	Angelic Sickle	Sabre	Angelic Raiment	Normal	Sword		17
+set	58	Arcanna's Sign	Amulet	Arcanna's Tricks		Amulet		20
+set	60	Arcanna's Head	Skull Cap	Arcanna's Tricks	Normal	Helm		20
+set	61	Arcanna's Flesh	Light Plate	Arcanna's Tricks	Normal	Body Armor		20
+set	59	Arcanna's Deathwand	War Staff	Arcanna's Tricks	Normal	Staff		20
+set	57	Arctic Mitts	Light Gauntlets	Arctic Gear	Normal	Gloves		3
+set	56	Arctic Binding	Light Belt	Arctic Gear	Normal	Belt		3
+set	55	Arctic Furs	Quilted Armor	Arctic Gear	Normal	Body Armor		3
+set	54	Arctic Horn	Short War Bow	Arctic Gear	Normal	Bow		3
+set	46	Berserker's Hatchet	Double Axe	Berserker's Arsenal	Normal	Axe		5
+set	45	Berserker's Hauberk	Splint Mail	Berserker's Arsenal	Normal	Body Armor		5
+set	44	Berserker's Headgear	Helm	Berserker's Arsenal	Normal	Helm		5
+set	29	Cathan's Seal	Ring	Cathan's Traps		Ring		15
+set	28	Cathan's Sigil	Amulet	Cathan's Traps		Amulet		15
+set	27	Cathan's Visage	Mask	Cathan's Traps	Normal	Helm		15
+set	26	Cathan's Mesh	Chain Mail	Cathan's Traps	Normal	Body Armor		15
+set	25	Cathan's Rule	Battle Staff	Cathan's Traps	Normal	Staff		15
+set	2	Civerb's Cudgel	Grand Scepter	Civerb's Vestments	Normal	Scepter		13
+set	0	Civerb's Ward	Large Shield	Civerb's Vestments	Normal	Shield		13
+set	1	Civerb's Icon	Amulet	Civerb's Vestments		Amulet		13
+set	6	Cleglaw's Tooth	Long Sword	Cleglaw's Brace	Normal	Sword		6
+set	7	Cleglaw's Claw	Small Shield	Cleglaw's Brace	Normal	Shield		6
+set	8	Cleglaw's Pincers	Chain Gloves	Cleglaw's Brace	Normal	Gloves		6
+set	49	Death's Touch	War Sword	Death's Disguise	Normal	Sword		8
+set	48	Death's Guard	Sash	Death's Disguise	Normal	Belt		8
+set	47	Death's Hand	Leather Gloves	Death's Disguise	Normal	Gloves		8
+set	5	Hsarus' Iron Stay	Belt	Hsarus' Defense	Normal	Belt		4
+set	4	Hsarus' Iron Fist	Buckler	Hsarus' Defense	Normal	Shield		4
+set	3	Hsarus' Iron Heel	Chain Boots	Hsarus' Defense	Normal	Boots		4
+set	43	Infernal Sign	Heavy Belt	Infernal Tools	Normal	Belt		7
+set	42	Infernal Torch	Grim Wand	Infernal Tools	Normal	Wand		7
+set	41	Infernal Cranium	Cap	Infernal Tools	Normal	Helm		7
+set	11	Iratha's Coil	Crown	Iratha's Finery	Normal	Helm		21
+set	10	Iratha's Cuff	Light Gauntlets	Iratha's Finery	Normal	Gloves		21
+set	12	Iratha's Cord	Heavy Belt	Iratha's Finery	Normal	Belt		21
+set	9	Iratha's Collar	Amulet	Iratha's Finery		Amulet		21
+set	13	Isenhart's Lightbrand	Broad Sword	Isenhart's Armory	Normal	Sword		11
+set	15	Isenhart's Case	Breast Plate	Isenhart's Armory	Normal	Body Armor		11
+set	16	Isenhart's Horns	Full Helm	Isenhart's Armory	Normal	Helm		11
+set	14	Isenhart's Parry	Gothic Shield	Isenhart's Armory	Normal	Shield		11
+set	22	Milabrega's Rod	War Scepter	Milabrega's Regalia	Normal	Scepter		23
+set	24	Milabrega's Robe	Ancient Armor	Milabrega's Regalia	Normal	Body Armor		23
+set	23	Milabrega's Diadem	Crown	Milabrega's Regalia	Normal	Helm		23
+set	21	Milabrega's Orb	Kite Shield	Milabrega's Regalia	Normal	Shield		23
+set	37	Sigon's Shelter	Gothic Plate	Sigon's Complete Steel	Normal	Body Armor		9
+set	36	Sigon's Visor	Great Helm	Sigon's Complete Steel	Normal	Helm		9
+set	40	Sigon's Guard	Tower Shield	Sigon's Complete Steel	Normal	Shield		9
+set	35	Sigon's Gage	Gauntlets	Sigon's Complete Steel	Normal	Gloves		9
+set	38	Sigon's Sabot	Greaves	Sigon's Complete Steel	Normal	Boots		9
+set	39	Sigon's Wrap	Plated Belt	Sigon's Complete Steel	Normal	Belt		9
+set	34	Tancred's Skull	Bone Helm	Tancred's Battlegear	Normal	Helm		27
+set	33	Tancred's Weird	Amulet	Tancred's Battlegear		Amulet		27
+set	32	Tancred's Hobnails	Boots	Tancred's Battlegear	Normal	Boots		27
+set	31	Tancred's Spine	Full Plate Mail	Tancred's Battlegear	Normal	Body Armor		27
+set	30	Tancred's Crowbill	Military Pick	Tancred's Battlegear	Normal	Axe		27
+set	20	Vidala's Snare	Amulet	Vidala's Rig		Amulet		19
+set	19	Vidala's Ambush	Leather Armor	Vidala's Rig	Normal	Body Armor		19
+set	18	Vidala's Fetlock	Light Plated Boots	Vidala's Rig	Normal	Boots		19
+set	17	Vidala's Barb	Long Battle Bow	Vidala's Rig	Normal	Bow		19
+set	68	Aldur's Rhythm	Jagged Star	Aldur's Watchtower	Exceptional	Mace		29
+set	66	Aldur's Stony Gaze	Hunter's Guise	Aldur's Watchtower	Exceptional	Druid Pelt		29
+set	67	Aldur's Deception	Shadow Plate	Aldur's Watchtower	Elite	Body Armor		29
+set	69	Aldur's Advance	Battle Boots	Aldur's Watchtower	Exceptional	Boots		29
+set	115	Bul-Kathos' Sacred Charge	Colossus Blade	Bul-Kathos' Children	Elite	Sword		50
+set	116	Bul-Kathos' Tribal Guardian	Mythical Sword	Bul-Kathos' Children	Elite	Sword		50
+set	117	Cow King's Horns	War Hat	Cow King's Leathers	Exceptional	Helm		20
+set	118	Cow King's Hide	Studded Leather	Cow King's Leathers	Normal	Body Armor		20
+set	119	Cow King's Hooves	Heavy Boots	Cow King's Leathers	Normal	Boots		20
+set	83	Griswold's Redemption	Caduceus	Griswold's Legacy	Elite	Scepter		44
+set	81	Griswold's Valor	Corona	Griswold's Legacy	Elite	Helm		44
+set	82	Griswold's Heart	Ornate Plate	Griswold's Legacy	Exceptional	Body Armor		44
+set	84	Griswold's Honor	Vortex Shield	Griswold's Legacy	Elite	Auric Shield		44
+set	100	Dangoon's Teaching	Reinforced Mace	Heaven's Brethren	Elite	Mace		55
+set	102	Haemosu's Adamant	Cuirass	Heaven's Brethren	Exceptional	Body Armor		55
+set	101	Taebaek's Glory	Ward	Heaven's Brethren	Elite	Shield		55
+set	103	Ondal's Almighty	Spired Helm	Heaven's Brethren	Elite	Helm		55
+set	111	Hwanin's Justice	Bill	Hwanin's Majesty	Exceptional	Polearm		28
+set	109	Hwanin's Refuge	Tigulated Mail	Hwanin's Majesty	Exceptional	Body Armor		28
+set	108	Hwanin's Splendor	Grand Crown	Hwanin's Majesty	Exceptional	Helm		28
+set	110	Hwanin's Blessing	Belt	Hwanin's Majesty	Normal	Belt		28
+set	75	Immortal King's Stone Crusher	Ogre Maul	Immortal King	Elite	Hammer		37
+set	70	Immortal King's Will	Avenger Guard	Immortal King	Normal	Barbarian Helm		37
+set	71	Immortal King's Soul Cage	Sacred Armor	Immortal King	Elite	Body Armor		37
+set	72	Immortal King's Detail	War Belt	Immortal King	Exceptional	Belt		37
+set	73	Immortal King's Forge	War Gauntlets	Immortal King	Exceptional	Gloves		37
+set	74	Immortal King's Pillar	War Boots	Immortal King	Exceptional	Boots		37
+set	94	M'avina's Caster	Grand Matron Bow	M'avina's Battle Hymn	Elite	Amazon Bow		21
+set	91	M'avina's Embrace	Kraken Shell	M'avina's Battle Hymn	Elite	Body Armor		21
+set	90	M'avina's True Sight	Diadem	M'avina's Battle Hymn	Elite	Circlet		21
+set	93	M'avina's Tenet	Sharkskin Belt	M'avina's Battle Hymn	Exceptional	Belt		21
+set	92	M'avina's Icy Clutch	Battle Gauntlets	M'avina's Battle Hymn	Exceptional	Gloves		21
+set	122	Naj's Circlet	Circlet	Naj's Ancient Vestige	Normal	Circlet		43
+set	121	Naj's Light Plate	Hellforge Plate	Naj's Ancient Vestige	Elite	Body Armor		43
+set	120	Naj's Puzzler	Elder Staff	Naj's Ancient Vestige	Elite	Staff		43
+set	63	Natalya's Mark	Scissors Suwayyah	Natalya's Odium	Elite	Claw		22
+set	64	Natalya's Shadow	Loricated Mail	Natalya's Odium	Elite	Body Armor		22
+set	62	Natalya's Totem	Grim Helm	Natalya's Odium	Exceptional	Helm		22
+set	65	Natalya's Soul	Mesh Boots	Natalya's Odium	Exceptional	Boots		22
+set	107	Whitstan's Guard	Round Shield	Orphan's Call	Exceptional	Shield		41
+set	104	Guillaume's Face	Winged Helm	Orphan's Call	Exceptional	Helm		41
+set	105	Wilhelm's Pride	Battle Belt	Orphan's Call	Exceptional	Belt		41
+set	106	Magnus' Skin	Sharkskin Gloves	Orphan's Call	Exceptional	Gloves		41
+set	126	Sander's Superstition	Bone Wand	Sander's Folly	Normal	Wand		20
+set	123	Sander's Paragon	Cap	Sander's Folly	Normal	Helm		20
+set	125	Sander's Taboo	Heavy Gloves	Sander's Folly	Normal	Gloves		20
+set	124	Sander's Riprap	Heavy Boots	Sander's Folly	Normal	Boots		20
+set	112	Sazabi's Cobalt Redeemer	Cryptic Sword	Sazabi's Grand Tribute	Elite	Sword		34
+set	113	Sazabi's Ghost Liberator	Balrog Skin	Sazabi's Grand Tribute	Elite	Body Armor		34
+set	114	Sazabi's Mental Sheath	Basinet	Sazabi's Grand Tribute	Exceptional	Helm		34
+set	77	Tal Rasha's Adjudication	Amulet	Tal Rasha's Wrappings		Amulet		26
+set	78	Tal Rasha's Lidless Eye	Swirling Crystal	Tal Rasha's Wrappings	Exceptional	Sorceress Orb		26
+set	79	Tal Rasha's Guardianship	Lacquered Plate	Tal Rasha's Wrappings	Elite	Body Armor		26
+set	80	Tal Rasha's Horadric Crest	Death Mask	Tal Rasha's Wrappings	Exceptional	Helm		26
+set	76	Tal Rasha's Fine-Spun Cloth	Mesh Belt	Tal Rasha's Wrappings	Exceptional	Belt		26
+set	98	Dark Adherent	Dusk Shroud	The Disciple	Elite	Body Armor		39
+set	99	Credendum	Mithril Coil	The Disciple	Elite	Belt		39
+set	96	Laying of Hands	Bramble Mitts	The Disciple	Elite	Gloves		39
+set	97	Rite of Passage	Demonhide Boots	The Disciple	Exceptional	Boots		39
+set	95	Telling of Beads	Amulet	The Disciple		Amulet		39
+set	85	Trang-Oul's Guise	Bone Visage	Trang-Oul's Avatar	Elite	Helm		32
+set	86	Trang-Oul's Scales	Chaos Armor	Trang-Oul's Avatar	Exceptional	Body Armor		32
+set	89	Trang-Oul's Girth	Troll Belt	Trang-Oul's Avatar	Elite	Belt		32
+set	88	Trang-Oul's Claws	Heavy Bracers	Trang-Oul's Avatar	Exceptional	Gloves		32
+set	87	Trang-Oul's Wing	Cantor Trophy	Trang-Oul's Avatar	Exceptional	Voodoo Head		32
+set	132	Bane's Oathmaker	Kris	Bane's Garments	Normal	Dagger		7
+set	133	Bane's Wraithskin	Hard Leather Armor	Bane's Garments	Normal	Body Armor		7
+set	134	Bane's Authority	Light Belt	Bane's Garments	Normal	Belt		7
+set	135	Horazon's Countenance	Demonhead	Horazon's Splendor	Elite	Helm		40
+set	136	Horazon's Dominion	Russet Armor	Horazon's Splendor	Exceptional	Body Armor		40
+set	137	Horazon's Hold	Demonhide Gloves	Horazon's Splendor	Exceptional	Gloves		40
+set	138	Horazon's Legacy	Mirrored Boots	Horazon's Splendor	Elite	Boots		40
+set	139	Horazon's Secrets	Occult Codex	Horazon's Splendor	Elite	Grimoire		40
+unique	112	Lenymo	Sash		Normal	Belt		10
+unique	113	Snakecord	Light Belt		Normal	Belt		16
+unique	114	Nightsmoke	Belt		Normal	Belt		27
+unique	115	Goldwrap	Heavy Belt		Normal	Belt		36
+unique	116	Bladebuckle	Plated Belt		Normal	Belt		39
+unique	242	String of Ears	Demonhide Sash		Exceptional	Belt		37
+unique	243	Razortail	Sharkskin Belt		Exceptional	Belt		39
+unique	244	Gloom's Trap	Mesh Belt		Exceptional	Belt		45
+unique	245	Snowclash	Battle Belt		Exceptional	Belt		49
+unique	246	Thundergod's Vigor	War Belt		Exceptional	Belt		55
+unique	373	Arachnid Mesh	Spiderweb Sash		Elite	Belt		87
+unique	374	Nosferatu's Coil	Vampirefang Belt		Elite	Belt		68
+unique	376	Verdungo's Hearty Cord	Mithril Coil		Elite	Belt		71
+unique	418	Gheed's Wager	Troll Belt		Elite	Belt		79
+unique	79	Greyform	Quilted Armor		Normal	Body Armor		10
+unique	80	Blinkbat's Form	Leather Armor		Normal	Body Armor		16
+unique	81	The Centurion	Hard Leather Armor		Normal	Body Armor		19
+unique	82	Twitchthroe	Studded Leather		Normal	Body Armor		22
+unique	83	Darkglow	Ring Mail		Normal	Body Armor		19
+unique	84	Hawkmail	Scale Mail		Normal	Body Armor		20
+unique	86	Venom Ward	Breast Plate		Normal	Body Armor		27
+unique	85	Sparking Mail	Chain Mail		Normal	Body Armor		23
+unique	87	Iceblink	Splint Mail		Normal	Body Armor		30
+unique	93	Heavenly Garb	Light Plate		Normal	Body Armor		39
+unique	89	Rockfleece	Field Plate		Normal	Body Armor		38
+unique	88	Boneflesh	Plate Mail		Normal	Body Armor		35
+unique	90	Rattlecage	Gothic Plate		Normal	Body Armor		39
+unique	91	Goldskin	Full Plate Mail		Normal	Body Armor		38
+unique	92	Silks of the Victor	Ancient Armor		Normal	Body Armor		38
+unique	209	The Spirit Shroud	Ghost Armor		Exceptional	Body Armor		36
+unique	210	Skin of the Vipermagi	Serpentskin Armor		Exceptional	Body Armor		37
+unique	211	Skin of the Flayed One	Demonhide Armor		Exceptional	Body Armor		39
+unique	212	Iron Pelt	Trellised Armor		Exceptional	Body Armor		41
+unique	214	Crow Caw	Tigulated Mail		Exceptional	Body Armor		45
+unique	213	Spirit Forge	Linked Mail		Exceptional	Body Armor		43
+unique	216	Duriel's Shell	Cuirass		Exceptional	Body Armor		49
+unique	215	Shaftstop	Mesh Armor		Exceptional	Body Armor		46
+unique	217	Skullder's Ire	Russet Armor		Exceptional	Body Armor		50
+unique	223	Que-Hegan's Wisdom	Mage Plate		Exceptional	Body Armor		59
+unique	219	Toothrow	Sharktooth Armor		Exceptional	Body Armor		56
+unique	218	Guardian Angel	Templar Coat		Exceptional	Body Armor		53
+unique	220	Atma's Wail	Embossed Plate		Exceptional	Body Armor		59
+unique	221	Black Hades	Chaos Armor		Exceptional	Body Armor		61
+unique	222	Corpsemourn	Ornate Plate		Exceptional	Body Armor		63
+unique	358	Ormus' Robes	Dusk Shroud		Elite	Body Armor		83
+unique	250	The Gladiator's Bane	Wire Fleece		Elite	Body Armor		85
+unique	251	Arkaine's Valor	Balrog Skin		Elite	Body Armor		85
+unique	317	Leviathan	Kraken Shell		Elite	Body Armor		73
+unique	348	Steel Carapace	Shadow Plate		Elite	Body Armor		74
+unique	366	Templar's Might	Sacred Armor		Elite	Body Armor		82
+unique	311	Tyrael's Might	Sacred Armor		Elite	Body Armor		87
+unique	107	Hotspur	Boots		Normal	Boots		7
+unique	108	Gorefoot	Heavy Boots		Normal	Boots		12
+unique	109	Treads of Cthon	Chain Boots		Normal	Boots		20
+unique	110	Goblin Toe	Light Plated Boots		Normal	Boots		30
+unique	111	Tearhaunch	Greaves		Normal	Boots		39
+unique	237	Infernostride	Demonhide Boots		Exceptional	Boots		37
+unique	238	Waterwalk	Sharkskin Boots		Exceptional	Boots		40
+unique	239	Silkweave	Mesh Boots		Exceptional	Boots		44
+unique	240	War Traveler	Battle Boots		Exceptional	Boots		50
+unique	241	Gore Rider	War Boots		Exceptional	Boots		55
+unique	370	Marrowwalk	Boneweave Boots		Elite	Boots		74
+unique	369	Sandstorm Trek	Scarabshell Boots		Elite	Boots		72
+unique	309	Shadow Dancer	Myrmidon Greaves		Elite	Boots		79
+unique	413	Wraithstep	Mirrored Boots		Elite	Boots		73
+unique	102	The Hand of Broc	Leather Gloves		Normal	Gloves		7
+unique	103	Bloodfist	Heavy Gloves		Normal	Gloves		12
+unique	104	Chance Guards	Chain Gloves		Normal	Gloves		20
+unique	105	Magefist	Light Gauntlets		Normal	Gloves		31
+unique	106	Frostburn	Gauntlets		Normal	Gloves		39
+unique	232	Venom Grip	Demonhide Gloves		Exceptional	Gloves		37
+unique	233	Gravepalm	Sharkskin Gloves		Exceptional	Gloves		39
+unique	234	Ghoulhide	Heavy Bracers		Exceptional	Gloves		44
+unique	235	Lava Gout	Battle Gauntlets		Exceptional	Gloves		50
+unique	236	Hellmouth	War Gauntlets		Exceptional	Gloves		55
+unique	364	Dracul's Grasp	Vampirebone Gloves		Elite	Gloves		84
+unique	312	Soul Drainer	Vambraces		Elite	Gloves		82
+unique	391	Steelrend	Ogre Gauntlets		Elite	Gloves		78
+unique	71	Biggin's Bonnet	Cap		Normal	Helm		4
+unique	72	Tarnhelm	Skull Cap		Normal	Helm		20
+unique	73	Coif of Glory	Helm		Normal	Helm		19
+unique	74	Duskdeep	Full Helm		Normal	Helm		23
+unique	75	Wormskull	Bone Helm		Normal	Helm		28
+unique	76	Howltusk	Great Helm		Normal	Helm		34
+unique	77	Undead Crown	Crown		Normal	Helm		39
+unique	78	The Face of Horror	Mask		Normal	Helm		27
+unique	201	Peasant Crown	War Hat		Exceptional	Helm		36
+unique	202	Rockstopper	Sallet		Exceptional	Helm		39
+unique	203	Stealskull	Casque		Exceptional	Helm		43
+unique	204	Darksight Helm	Basinet		Exceptional	Helm		46
+unique	208	Vampire Gaze	Grim Helm		Exceptional	Helm		49
+unique	205	Valkyrie Wing	Winged Helm		Exceptional	Helm		52
+unique	206	Crown of Thieves	Grand Crown		Exceptional	Helm		57
+unique	207	Blackhorn's Face	Death Mask		Exceptional	Helm		49
+unique	345	Andariel's Visage	Demonhead		Elite	Helm		85
+unique	344	Crown of Ages	Corona		Elite	Helm		86
+unique	379	Giant Skull	Bone Visage		Elite	Helm		73
+unique	248	Harlequin Crest	Shako		Elite	Helm		69
+unique	343	Nightwing's Veil	Spired Helm		Elite	Helm		75
+unique	297	Steel Shade	Armet		Elite	Helm		70
+unique	249	Veil of Steel	Spired Helm		Elite	Helm		77
+unique	357	Kira's Guardian	Tiara		Exceptional	Circlet		85
+unique	336	Griffon's Eye	Diadem		Elite	Circlet		84
+unique	419	Hellwarden's Will	Death Mask		Exceptional	Helm		55
+unique	94	Pelta Lunata	Buckler		Normal	Shield		3
+unique	95	Umbral Disk	Small Shield		Normal	Shield		12
+unique	96	Stormguild	Large Shield		Normal	Shield		18
+unique	98	Swordback Hold	Spiked Shield		Normal	Shield		20
+unique	99	Steelclash	Kite Shield		Normal	Shield		23
+unique	97	Wall of the Eyeless	Bone Shield		Normal	Shield		27
+unique	100	Bverrit Keep	Tower Shield		Normal	Shield		26
+unique	101	The Ward	Gothic Shield		Normal	Shield		35
+unique	224	Visceratuant	Defender		Exceptional	Shield		36
+unique	225	Moser's Blessed Circle	Round Shield		Exceptional	Shield		39
+unique	226	Stormchaser	Scutum		Exceptional	Shield		43
+unique	231	Lance Guard	Barbed Shield		Exceptional	Shield		43
+unique	227	Tiamat's Rebuke	Dragon Shield		Exceptional	Shield		46
+unique	230	Lidless Wall	Grim Shield		Exceptional	Shield		49
+unique	228	Gerke's Sanctuary	Pavise		Exceptional	Shield		52
+unique	229	Radament's Sphere	Ancient Shield		Exceptional	Shield		58
+unique	252	Blackoak Shield	Luna		Elite	Shield		67
+unique	253	Stormshield	Monarch		Elite	Shield		77
+unique	390	Head Hunter's Glory	Troll Nest		Elite	Shield		83
+unique	349	Medusa's Gaze	Aegis		Elite	Shield		84
+unique	363	Spike Thorn	Blade Barrier		Elite	Shield		78
+unique	356	Spirit Ward	Ward		Elite	Shield		76
+unique	282	Lycander's Aim	Ceremonial Bow		Exceptional	Amazon Bow		50
+unique	281	Titan's Revenge	Ceremonial Javelin		Exceptional	Amazon Javelin		50
+unique	283	Lycander's Flank	Ceremonial Pike		Exceptional	Amazon Spear		50
+unique	332	Blood Raven's Charge	Matriarchal Bow		Elite	Amazon Bow		79
+unique	338	Thunderstroke	Matriarchal Javelin		Elite	Amazon Javelin		77
+unique	316	Stoneraven	Matriarchal Spear		Elite	Amazon Spear		72
+unique	286	Bartuc's Cut-Throat	Greater Talons		Exceptional	Claw		50
+unique	368	Firelizard's Talons	Feral Claws		Elite	Claw		75
+unique	308	Jade Talon	Wrist Sword		Elite	Claw		74
+unique	334	Shadow Killer	Battle Cestus		Elite	Claw		85
+unique	279	Arreat's Face	Slayer Guard		Exceptional	Barbarian Helm		50
+unique	325	Demonhorn's Edge	Destroyer Helm		Elite	Barbarian Helm		69
+unique	361	Halaberd's Reign	Conqueror Crown		Elite	Barbarian Helm		85
+unique	355	Wolfhowl	Fury Visor		Elite	Barbarian Helm		85
+unique	287	Jalal's Mane	Totemic Mask		Exceptional	Druid Pelt		50
+unique	310	Cerebus' Bite	Blood Spirit		Elite	Druid Pelt		71
+unique	350	Ravenlore	Sky Spirit		Elite	Druid Pelt		82
+unique	327	Spirit Keeper	Earth Spirit		Elite	Druid Pelt		75
+unique	280	Homunculus	Hierophant Trophy		Exceptional	Voodoo Head		50
+unique	341	Boneflame	Succubus Skull		Elite	Voodoo Head		80
+unique	330	Darkforce Spawn	Bloodlord Skull		Elite	Voodoo Head		72
+unique	285	Herald of Zakarum	Gilded Shield		Exceptional	Auric Shield		50
+unique	329	Alma Negra	Sacred Rondache		Elite	Auric Shield		85
+unique	347	Dragonscale	Zakarum Shield		Elite	Auric Shield		84
+unique	284	The Oculus	Swirling Crystal		Exceptional	Sorceress Orb		50
+unique	354	Death's Fathom	Dimensional Shard		Elite	Sorceress Orb		81
+unique	367	Eschuta's Temper	Eldritch Orb		Elite	Sorceress Orb		80
+unique	411	Measured Wrath	Burnt Text		Exceptional	Grimoire		58
+unique	409	Ars Tor'Baalos	Blasphemous Compendium		Elite	Grimoire		85
+unique	410	Ars Dul'Mephistos	Occult Tome		Elite	Grimoire		85
+unique	408	Ars Al'Diabolos	Blasphemous Grimoire		Elite	Grimoire		85
+unique	117	Nokozan Relic	Amulet			Amulet		14
+unique	118	The Eye of Etlich	Amulet			Amulet		20
+unique	119	The Mahim-Oak Curio	Amulet			Amulet		34
+unique	277	Saracen's Chance	Amulet			Amulet		55
+unique	269	The Cat's Eye	Amulet			Amulet		58
+unique	270	The Rising Sun	Amulet			Amulet		73
+unique	271	Crescent Moon	Amulet			Amulet		58
+unique	273	Atma's Scarab	Amulet			Amulet		60
+unique	276	Highlord's Wrath	Amulet			Amulet		73
+unique	272	Mara's Kaleidoscope	Amulet			Amulet		80
+unique	302	Seraph's Hymn	Amulet			Amulet		73
+unique	375	Metalgrid	Amulet			Amulet		85
+unique	417	Entropy Locket	Amulet			Amulet		60
+unique	381	Annihilus	Small Charm			Small Charm		110
+unique	359	Gheed's Fortune	Grand Charm			Grand Charm		70
+unique	400	Hellfire Torch	Large Charm			Large Charm		110
+unique	405	Bone Break	Grand Charm			Grand Charm		69
+unique	406	Black Cleft	Grand Charm			Grand Charm		69
+unique	401	Cold Rupture	Grand Charm			Grand Charm		69
+unique	403	Crack of the Heavens	Grand Charm			Grand Charm		69
+unique	404	Rotting Fissure	Grand Charm			Grand Charm		69
+unique	402	Flame Rift	Grand Charm			Grand Charm		69
+unique	431	Latent Bone Break	Grand Charm			Grand Charm		75
+unique	432	Latent Black Cleft	Grand Charm			Grand Charm		75
+unique	426	Latent Cold Rupture	Grand Charm			Grand Charm		75
+unique	429	Latent Crack of the Heavens	Grand Charm			Grand Charm		75
+unique	428	Latent Flame Rift	Grand Charm			Grand Charm		75
+unique	430	Latent Rotting Fissure	Grand Charm			Grand Charm		75
+unique	436	Renewed Bone Break	Grand Charm			Grand Charm		75
+unique	437	Renewed Black Cleft	Grand Charm			Grand Charm		75
+unique	427	Renewed Cold Rupture	Grand Charm			Grand Charm		75
+unique	434	Renewed Crack of the Heavens	Grand Charm			Grand Charm		75
+unique	433	Renewed Flame Rift	Grand Charm			Grand Charm		75
+unique	435	Renewed Rotting Fissure	Grand Charm			Grand Charm		75
+unique	397	Rainbow Facet: Cold Level-up	Jewel			Jewel		85
+unique	398	Rainbow Facet: Fire Level-up	Jewel			Jewel		85
+unique	396	Rainbow Facet: Lightning Level-up	Jewel			Jewel		85
+unique	399	Rainbow Facet: Poison Level-up	Jewel			Jewel		85
+unique	393	Rainbow Facet: Cold Death	Jewel			Jewel		85
+unique	394	Rainbow Facet: Fire Death	Jewel			Jewel		85
+unique	392	Rainbow Facet: Lightning Death	Jewel			Jewel		85
+unique	395	Rainbow Facet: Poison Death	Jewel			Jewel		85
+unique	420	Defender's Bile	Jewel			Jewel		110
+unique	421	Guardian's Thunder	Jewel			Jewel		110
+unique	422	Protector's Frost	Jewel			Jewel		110
+unique	423	Defender's Fire	Jewel			Jewel		110
+unique	424	Protector's Stone	Jewel			Jewel		110
+unique	425	Guardian's Light	Jewel			Jewel		110
+unique	120	Nagelring	Ring			Ring		10
+unique	121	Manald Heal	Ring			Ring		20
+unique	122	The Stone of Jordan	Ring			Ring		39
+unique	274	Dwarf Star	Ring			Ring		53
+unique	275	Raven Frost	Ring			Ring		53
+unique	268	Bul-Kathos' Wedding Band	Ring			Ring		66
+unique	378	Carrion Wind	Ring			Ring		68
+unique	300	Nature's Peace	Ring			Ring		77
+unique	319	Wisp Projector	Ring			Ring		84
+unique	415	Sling	Ring			Ring		58
+unique	416	Opalvein	Ring			Ring		58
+unique	0	The Gnasher	Hand Axe		Normal	Axe		7
+unique	1	Deathspade	Axe		Normal	Axe		12
+unique	2	Bladebone	Double Axe		Normal	Axe		20
+unique	3	Skull Splitter	Military Pick		Normal	Axe		28
+unique	4	Rakescar	War Axe		Normal	Axe		36
+unique	129	Coldkill	Hatchet		Exceptional	Axe		44
+unique	130	Butcher's Pupil	Cleaver		Exceptional	Axe		47
+unique	131	Islestrike	Twin Axe		Exceptional	Axe		51
+unique	132	Pompeii's Wrath	Crowbill		Exceptional	Axe		53
+unique	133	Guardian Naga	Naga		Exceptional	Axe		56
+unique	294	Razor's Edge	Tomahawk		Elite	Axe		75
+unique	313	Rune Master	Ettin Axe		Elite	Axe		80
+unique	383	Cranebeak	War Spike		Elite	Axe		71
+unique	314	Death Cleaver	Berserker Axe		Elite	Axe		78
+unique	14	Felloak	Club		Normal	Club		4
+unique	18	Stoutnail	Spiked Club		Normal	Club		7
+unique	143	Dark Clan Crusher	Cudgel		Exceptional	Club		42
+unique	147	Fleshrender	Barbed Club		Exceptional	Club		46
+unique	384	Nord's Tenderizer	Truncheon		Elite	Club		76
+unique	296	Demon Limb	Tyrant Club		Elite	Club		71
+unique	25	Rixot's Keen	Short Sword		Normal	Sword		3
+unique	26	Blood Crescent	Scimitar		Normal	Sword		10
+unique	27	Skewer of Krintiz	Sabre		Normal	Sword		14
+unique	28	Gleamscythe	Falchion		Normal	Sword		18
+unique	30	Griswold's Edge	Broad Sword		Normal	Sword		23
+unique	31	Hellplague	Long Sword		Normal	Sword		30
+unique	32	Culwen's Point	War Sword		Normal	Sword		39
+unique	154	Bloodletter	Gladius		Exceptional	Sword		38
+unique	155	Coldsteel Eye	Cutlass		Exceptional	Sword		39
+unique	156	Hexfire	Shamshir		Exceptional	Sword		41
+unique	157	Blade of Ali Baba	Tulwar		Exceptional	Sword		43
+unique	158	Ginther's Rift	Dimensional Blade		Exceptional	Sword		45
+unique	159	Headstriker	Battle Sword		Exceptional	Sword		47
+unique	160	Plague Bearer	Rune Sword		Exceptional	Sword		49
+unique	161	The Atlantean	Ancient Sword		Exceptional	Sword		50
+unique	29,301	Azurewrath	Phase Blade		Elite	Sword		87
+unique	289	Bloodmoon	Elegant Blade		Elite	Sword		69
+unique	290	Djinn Slayer	Ataghan		Elite	Sword		73
+unique	365	Frostwind	Cryptic Sword		Elite	Sword		78
+unique	259	Lightsabre	Phase Blade		Elite	Sword		66
+unique	5	Axe of Fechmar	Large Axe		Normal	Axe		11
+unique	6	Goreshovel	Broad Axe		Normal	Axe		19
+unique	7	The Chieftain	Battle Axe		Normal	Axe		26
+unique	8	Brainhew	Great Axe		Normal	Axe		34
+unique	9	Humongous	Giant Axe		Normal	Axe		39
+unique	134	Warlord's Trust	Military Axe		Exceptional	Axe		43
+unique	135	Spellsteel	Bearded Axe		Exceptional	Axe		47
+unique	136	Stormrider	Tabar		Exceptional	Axe		49
+unique	137	Boneslayer Blade	Gothic Axe		Exceptional	Axe		50
+unique	138	The Minotaur	Ancient Axe		Exceptional	Axe		53
+unique	324	Ethereal Edge	Silver-edged Axe		Elite	Axe		82
+unique	254	Hellslayer	Decapitator		Elite	Axe		71
+unique	255	Messerschmidt's Reaver	Champion Axe		Elite	Axe		75
+unique	315	Executioner's Justice	Glorious Axe		Elite	Axe		83
+unique	33	Shadowfang	Two-Handed Sword		Normal	Sword		16
+unique	34	Soulflay	Claymore		Normal	Sword		26
+unique	35	Kinemil's Awl	Giant Sword		Normal	Sword		31
+unique	36	Blacktongue	Bastard Sword		Normal	Sword		35
+unique	37	Ripsaw	Flamberge		Normal	Sword		35
+unique	38	The Patriarch	Great Sword		Normal	Sword		39
+unique	162	Crainte Vomir	Espandon		Exceptional	Sword		50
+unique	163	Bing Sz Wang	Dacian Falx		Exceptional	Sword		51
+unique	164	The Vile Husk	Tusk Sword		Exceptional	Sword		52
+unique	165	Cloudcrack	Gothic Sword		Exceptional	Sword		53
+unique	166	Todesfaelle Flamme	Zweihander		Exceptional	Sword		54
+unique	167	Swordguard	Executioner Sword		Exceptional	Sword		55
+unique	353	Flamebellow	Balrog Blade		Elite	Sword		79
+unique	260	Doombringer	Champion Sword		Elite	Sword		75
+unique	261	The Grandfather	Colossus Blade		Elite	Sword		85
+unique	412	Dreadfang	Legend Sword		Elite	Sword		69
+unique	59	Pluckeye	Short Bow		Normal	Bow		10
+unique	60	Witherstring	Hunter's Bow		Normal	Bow		18
+unique	61	Raven Claw	Long Bow		Normal	Bow		20
+unique	62	Rogue's Bow	Composite Bow		Normal	Bow		27
+unique	63	Stormstrike	Short Battle Bow		Normal	Bow		34
+unique	64	Wizendraw	Long Battle Bow		Normal	Bow		35
+unique	65	Hellclap	Short War Bow		Normal	Bow		36
+unique	66	Blastbark	Long War Bow		Normal	Bow		38
+unique	188	Skystrike	Edge Bow		Exceptional	Bow		36
+unique	189	Riphook	Razor Bow		Exceptional	Bow		39
+unique	190	Kuko Shakaku	Cedar Bow		Exceptional	Bow		41
+unique	191	Endlesshail	Double Bow		Exceptional	Bow		44
+unique	192	Witchwild String	Short Siege Bow		Exceptional	Bow		47
+unique	193	Cliffkiller	Large Siege Bow		Exceptional	Bow		49
+unique	194	Magewrath	Rune Bow		Exceptional	Bow		51
+unique	195	Goldstrike Arch	Gothic Bow		Exceptional	Bow		54
+unique	331	Widowmaker	Ward Bow		Elite	Bow		73
+unique	265	Eaglehorn	Crusader Bow		Elite	Bow		77
+unique	266	Windforce	Hydra Bow		Elite	Bow		80
+unique	67	Leadcrow	Light Crossbow		Normal	Crossbow		12
+unique	68	Ichorsting	Crossbow		Normal	Crossbow		24
+unique	69	Hellcast	Heavy Crossbow		Normal	Crossbow		36
+unique	70	Doomslinger	Repeating Crossbow		Normal	Crossbow		38
+unique	196	Langer Briser	Arbalest		Exceptional	Crossbow		40
+unique	197	Pus Spitter	Siege Crossbow		Exceptional	Crossbow		44
+unique	198	Buriza-Do Kyanon	Ballista		Exceptional	Crossbow		59
+unique	199	Demon Machine	Chu-Ko-Nu		Exceptional	Crossbow		57
+unique	293	Gut Siphon	Demon Crossbow		Elite	Crossbow		79
+unique	328	Hellrack	Colossus Crossbow		Elite	Crossbow		84
+unique	39	Gull	Dagger		Normal	Dagger		6
+unique	40	The Diggler	Dirk		Normal	Dagger		15
+unique	41	The Jade Tan Do	Kris		Normal	Dagger		26
+unique	42	Spectral Shard	Blade		Normal	Dagger		34
+unique	168	Spineripper	Poignard		Exceptional	Dagger		40
+unique	169	Heart Carver	Rondel		Exceptional	Dagger		44
+unique	170	Blackbog's Sharp	Cinquedeas		Exceptional	Dagger		46
+unique	171	Stormspike	Stiletto		Exceptional	Dagger		49
+unique	304	Fleshripper	Fanged Knife		Elite	Dagger		76
+unique	333	Ghostflame	Legend Spike		Elite	Dagger		70
+unique	262	Wizardspike	Bone Knife		Elite	Dagger		69
+unique	414	Bloodpact Shard	Mithril Point		Elite	Dagger		73
+unique	22	Ironstone	War Hammer		Normal	Hammer		36
+unique	151	Earthshaker	Battle Hammer		Exceptional	Hammer		51
+unique	307	Stone Crusher	Legendary Mallet		Elite	Hammer		76
+unique	257	Schaefer's Hammer	Legendary Mallet		Elite	Hammer		83
+unique	320	Gargoyle's Bite	Winged Harpoon		Elite	Javelin		78
+unique	386	Wraith Flight	Ghost Glaive		Elite	Javelin		84
+unique	340	Demon's Arch	Balrog Spear		Elite	Javelin		76
+unique	360	Stormlash	Scourge		Elite	Mace		86
+unique	306	Horizon's Tornado	Scourge		Elite	Mace		72
+unique	148	Sureshrill Frost	Flanged Mace		Exceptional	Mace		47
+unique	256	Baranar's Star	Devil Star		Elite	Mace		70
+unique	20	Bloodrise	Morning Star		Normal	Mace		20
+unique	149	Moonfall	Jagged Star		Exceptional	Mace		50
+unique	150	Baezil's Vortex	Knout		Exceptional	Mace		53
+unique	19	Crushflange	Mace		Normal	Mace		12
+unique	21	The General's Tan Do Li Ga	Flail		Normal	Mace		28
+unique	152	Bloodtree Stump	War Club		Exceptional	Hammer		56
+unique	258	The Cranium Basher	Thunder Maul		Elite	Hammer		85
+unique	153	The Gavel of Pain	Martel de Fer		Exceptional	Hammer		53
+unique	385	Earth Shifter	Thunder Maul		Elite	Hammer		77
+unique	23	Bonesnap	Maul		Normal	Hammer		32
+unique	24	Steeldriver	Great Maul		Normal	Hammer		39
+unique	337	Windhammer	Ogre Maul		Elite	Hammer		76
+unique	48	Dimoak's Hew	Bardiche		Normal	Polearm		11
+unique	49	Steelgoad	Voulge		Normal	Polearm		19
+unique	50	Soul Harvest	Scythe		Normal	Polearm		26
+unique	51	The Battlebranch	Poleaxe		Normal	Polearm		30
+unique	52	Woestave	Halberd		Normal	Polearm		38
+unique	53	The Grim Reaper	War Scythe		Normal	Polearm		39
+unique	177	The Meat Scraper	Lochaber Axe		Exceptional	Polearm		49
+unique	178	Blackleach Blade	Bill		Exceptional	Polearm		50
+unique	179	Athena's Wrath	Battle Scythe		Exceptional	Polearm		50
+unique	180	Pierre Tombale Couant	Partizan		Exceptional	Polearm		51
+unique	181	Husoldal Evo	Bec-de-Corbin		Exceptional	Polearm		52
+unique	182	Grim's Burning Dead	Grim Scythe		Exceptional	Polearm		52
+unique	387	Bonehew	Ogre Axe		Elite	Polearm		72
+unique	326	The Reaper's Toll	Thresher		Elite	Polearm		83
+unique	298	Tomb Reaver	Cryptic Axe		Elite	Polearm		86
+unique	264	Stormspire	Giant Thresher		Elite	Polearm		78
+unique	15	Knell Striker	Scepter		Normal	Scepter		7
+unique	16	Rusthandle	Grand Scepter		Normal	Scepter		23
+unique	17	Stormeye	War Scepter		Normal	Scepter		31
+unique	144	Zakarum's Hand	Rune Scepter		Exceptional	Scepter		45
+unique	145	The Fetid Sprinkler	Holy Water Sprinkler		Exceptional	Scepter		46
+unique	146	Hand of Blessed Light	Divine Scepter		Exceptional	Scepter		50
+unique	380	Astreon's Iron Ward	Caduceus		Elite	Scepter		68
+unique	371	Heaven's Light	Mighty Scepter		Elite	Scepter		69
+unique	389	The Redeemer	Mighty Scepter		Elite	Scepter		80
+unique	43	The Dragon Chang	Spear		Normal	Spear		11
+unique	44	Razortine	Trident		Normal	Spear		16
+unique	45	Bloodthief	Brandistock		Normal	Spear		23
+unique	46	Lance of Yaggai	Spetum		Normal	Spear		30
+unique	47	The Tannr Gorerod	Pike		Normal	Spear		36
+unique	172	The Impaler	War Spear		Exceptional	Spear		39
+unique	173	Kelpie Snare	Fuscina		Exceptional	Spear		41
+unique	174	Soulfeast Tine	War Fork		Exceptional	Spear		43
+unique	175	Hone Sundan	Yari		Exceptional	Spear		45
+unique	176	Spire of Honor	Lance		Exceptional	Spear		47
+unique	382	Arioc's Needle	Hyperion Spear		Elite	Spear		85
+unique	342	Steel Pillar	War Pike		Elite	Spear		77
+unique	323	Viperfork	Mancatcher		Elite	Spear		79
+unique	54	Bane Ash	Short Staff		Normal	Staff		7
+unique	55	Serpent Lord	Long Staff		Normal	Staff		12
+unique	56	Spire of Lazarus	Gnarled Staff		Normal	Staff		24
+unique	57	The Salamander	Battle Staff		Normal	Staff		28
+unique	58	The Iron Jang Bong	War Staff		Normal	Staff		38
+unique	183	Razorswitch	Jo Staff		Exceptional	Staff		36
+unique	184	Ribcracker	Quarterstaff		Exceptional	Staff		39
+unique	185	Chromatic Ire	Cedar Staff		Exceptional	Staff		43
+unique	186	Warpspear	Gothic Staff		Exceptional	Staff		47
+unique	187	Skull Collector	Rune Staff		Exceptional	Staff		49
+unique	322	Mang Song's Lesson	Archon Staff		Elite	Staff		86
+unique	388	Ondal's Wisdom	Elder Staff		Elite	Staff		74
+unique	291	Deathbit	Battle Dart		Exceptional	Throwing Knife		52
+unique	288	The Scalper	Francisca		Exceptional	Throwing Axe		65
+unique	335	Gimmershred	Flying Axe		Elite	Throwing Axe		78
+unique	321	Lacerator	Winged Axe		Elite	Throwing Axe		76
+unique	292	Warshrike	Winged Knife		Elite	Throwing Knife		83
+unique	10	Torch of Iro	Wand		Normal	Wand		7
+unique	11	Maelstrom	Yew Wand		Normal	Wand		19
+unique	12	Gravenspine	Bone Wand		Normal	Wand		27
+unique	13	Ume's Lament	Grim Wand		Normal	Wand		38
+unique	139	Suicide Branch	Burnt Wand		Exceptional	Wand		41
+unique	140	Carin Shard	Petrified Wand		Exceptional	Wand		43
+unique	141	Arm of King Leoric	Tomb Wand		Exceptional	Wand		44
+unique	142	Blackhand Key	Grave Wand		Exceptional	Wand		49
+unique	351	Boneshade	Lich Wand		Elite	Wand		84
+unique	299	Death's Web	Unearthed Wand		Elite	Wand		74
+runeword	48	Delirium				Runeword	Lem Ist Io	
+runeword	55	Dream				Runeword	Io Jah Pul	
+runeword	66	Flickering Flame				Runeword	Nef Pul Vex	
+runeword	101	Lore				Runeword	Ort Sol	
+runeword	113	Nadir				Runeword	Nef Tir	
+runeword	141	Radiance				Runeword	Nef Sol Ith	
+runeword	190	Wisdom				Runeword	Pul Ith Eld	
+runeword	34	Bone				Runeword	Sol Um Um	
+runeword	35	Bramble				Runeword	Ral Ohm Sur Eth	
+runeword	40	Chains of Honor				Runeword	Dol Um Ber Ist	
+runeword	53	Dragon				Runeword	Sur Lo Sol	
+runeword	56	Duress				Runeword	Shael Um Thul	
+runeword	59	Enigma				Runeword	Jah Ith Ber	
+runeword	60	Enlightenment				Runeword	Pul Ral Sol	
+runeword	67	Fortitude				Runeword	El Sol Dol Lo	
+runeword	71	Gloom				Runeword	Fal Um Pul	
+runeword	100	Lionheart				Runeword	Hel Lum Fal	
+runeword	112	Myth				Runeword	Hel Amn Nef	
+runeword	123	Peace				Runeword	Shael Thul Amn	
+runeword	135	Principle				Runeword	Ral Gul Eld	
+runeword	137	Prudence				Runeword	Mal Tir	
+runeword	142	Rain				Runeword	Ort Mal Ith	
+runeword	153	Smoke				Runeword	Nef Lum	
+runeword	158	Stealth				Runeword	Tal Eth	
+runeword	162	Stone				Runeword	Shael Um Pul Lum	
+runeword	173	Treachery				Runeword	Shael Thul Lem	
+runeword	185	Wealth				Runeword	Lem Ko Tir	
+runeword	30	Beast				Runeword	Ber Tir Um Mal Lum	
+runeword	32	Black				Runeword	Thul Io Nef	
+runeword	36	Brand				Runeword	Jah Lo Mal Gul	
+runeword	37	Breath of the Dying				Runeword	Vex Hel El Eld Zod Eth	
+runeword	39	Call to Arms				Runeword	Amn Ral Mal Ist Ohm	
+runeword	42	Chaos				Runeword	Fal Ohm Um	
+runeword	43	Crescent Moon				Runeword	Shael Um Tir	
+runeword	46	Death				Runeword	Hel El Vex Ort Gul	
+runeword	51	Destruction				Runeword	Vex Lo Ber Jah Ko	
+runeword	52	Doom				Runeword	Hel Ohm Um Lo Cham	
+runeword	57	Edge				Runeword	Tir Tal Amn	
+runeword	62	Eternity				Runeword	Amn Ber Ist Sol Sur	
+runeword	64	Faith				Runeword	Ohm Jah Lem Eld	
+runeword	65	Famine				Runeword	Fal Ohm Ort Jah	
+runeword	70	Fury				Runeword	Jah Gul Eth	
+runeword	73	Grief				Runeword	Eth Tir Lo Mal Ral	
+runeword	74	Hand of Justice				Runeword	Sur Cham Amn Lo	
+runeword	75	Harmony				Runeword	Tir Ith Sol Ko	
+runeword	77	Heart of the Oak				Runeword	Ko Vex Pul Thul	
+runeword	80	Holy Thunder				Runeword	Eth Ral Ort Tal	
+runeword	81	Honor				Runeword	Amn El Ith Tir Sol	
+runeword	85	Ice				Runeword	Amn Shael Jah Lo	
+runeword	86	Infinity				Runeword	Ber Mal Ber Ist	
+runeword	88	Insight				Runeword	Ral Tir Tal Sol	
+runeword	91	King's Grace				Runeword	Amn Ral Thul	
+runeword	92	Kingslayer				Runeword	Mal Um Gul Fal	
+runeword	95	Last Wish				Runeword	Jah Mal Jah Sur Jah Ber	
+runeword	97	Lawbringer				Runeword	Amn Lem Ko	
+runeword	98	Leaf				Runeword	Tir Ral	
+runeword	106	Malice				Runeword	Ith El Eth	
+runeword	107	Melody				Runeword	Shael Ko Nef	
+runeword	108	Memory				Runeword	Lum Io Sol Eth	
+runeword	109	Mist				Runeword	Cham Shael Gul Thul Ith	
+runeword	116	Oath				Runeword	Shael Pul Mal Lum	
+runeword	117	Obedience				Runeword	Hel Ko Thul Eth Fal	
+runeword	119	Obsession				Runeword	Zod Ist Lem Lum Io Nef	
+runeword	120	Passion				Runeword	Dol Ort Eld Lem	
+runeword	122	Pattern				Runeword	Tal Ort Thul	
+runeword	128	Phoenix				Runeword	Vex Vex Lo Jah	
+runeword	131	Plague				Runeword	Cham Shael Um	
+runeword	134	Pride				Runeword	Cham Sur Io Lo	
+runeword	146	Rift				Runeword	Hel Ko Lem Gul	
+runeword	151	Silence				Runeword	Dol Eld Hel Ist Tir Vex	
+runeword	155	Spirit				Runeword	Tal Thul Ort Amn	
+runeword	159	Steel				Runeword	Tir El	
+runeword	164	Strength				Runeword	Amn Tir	
+runeword	176	Unbending Will				Runeword	Fal Io Ith Eld El Hel	
+runeword	179	Venom				Runeword	Tal Dol Mal	
+runeword	124	Voice of Reason				Runeword	Lem Ko El Eld	
+runeword	187	White				Runeword	Dol Io	
+runeword	188	Wind				Runeword	Sur El	
+runeword	193	Wrath				Runeword	Pul Lum Ber Mal	
+runeword	195	Zephyr				Runeword	Ort Eth	
+runeword	27	Ancients' Pledge				Runeword	Ral Ort Tal	
+runeword	63	Exile				Runeword	Vex Ohm Ist Dol	
+runeword	145	Rhyme				Runeword	Shael Eth	
+runeword	147	Sanctuary				Runeword	Ko Ko Mal	
+runeword	156	Splendor				Runeword	Eth Lum	
+runeword	204	Bulwark				Runeword	Shael Io Sol	
+runeword	203	Cure				Runeword	Shael Io Tal	
+runeword	200	Ground				Runeword	Shael Io Ort	
+runeword	202	Hearth				Runeword	Shael Io Thul	
+runeword	201	Temper				Runeword	Shael Io Ral	
+runeword	197	Mania				Runeword	Shael Ko Eld	
+runeword	196	Hysteria				Runeword	Shael Ko Eld	
+runeword	198	Mosaic				Runeword	Mal Gul Amn	
+runeword	199	Metamorphosis				Runeword	Io Cham Fal	
+runeword	29	Authority				Runeword	Hel Shael Ral	
+runeword	205	Coven				Runeword	Ist Ral Io	
+runeword	182	Void				Runeword	Thul Zod Ist	
+runeword	206	Vigilance				Runeword	Dol Gul	
+runeword	207	Ritual				Runeword	Amn Shael Ohm	

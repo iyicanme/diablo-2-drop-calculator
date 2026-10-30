@@ -1,4 +1,4 @@
-"""Pulls the excel tables (and English strings) that gen_area_monsters.py needs
+"""Pulls the excel tables and English strings that gen_item_details.py and gen_area_monsters.py need
 out of a D2R install.
 
 usage: py -I tools/extract_d2r.py <D2R data dir> <out dir>
