@@ -6,14 +6,17 @@
 //! - 20-byte header: magic, u16 version (1), u16 set count, u16 unique count, u16 runeword count,
 //!   8 reserved bytes.
 //! - One 10-byte record per entry, sets first, then uniques, then runewords: u32 id, u16 of
-//!   unknown meaning, u32 minutes since the Unix epoch (UTC) when the item was recorded.
+//!   unknown meaning, u32 minutes since the Unix epoch (UTC) when the item was recorded. Set and
+//!   unique ids are their row ids; a runeword id is the string id of its name (see [`runeword_row`]).
 //! - A 64-byte block of unknown meaning.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use anyhow::{Context, Result, bail};
 
-use crate::items::Kind;
+use crate::items::{self, Kind};
 
 const SECTOR_MAGIC: [u8; 4] = [0x55, 0xAA, 0x55, 0xAA];
 const SECTOR_HEADER_SIZE: usize = 0x40;
@@ -21,8 +24,8 @@ const CHRONICLE_MAGIC: [u8; 4] = [0xC0, 0xED, 0xEA, 0xC0];
 const CHRONICLE_VERSION: u16 = 1;
 const HEADER_SIZE: usize = 20;
 const RECORD_SIZE: usize = 10;
-/// A runeword id holds its runes.txt row in the low 12 bits (the high bits are always 5).
-const RUNEWORD_ROW_MASK: u32 = 0xFFF;
+/// English strings of runeword names, keyed `RunewordN` with their string ids.
+const ITEM_RUNES_JSON: &str = include_str!("../../../data/item-runes.json");
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Entry {
@@ -95,7 +98,7 @@ fn parse_chronicle(payload: &[u8]) -> Result<Vec<Entry>> {
         for rec in records.by_ref().take(count.into()) {
             let id = u32_at(rec, 0);
             let row = if kind == Kind::Runeword {
-                id & RUNEWORD_ROW_MASK
+                runeword_row(id)
             } else {
                 id
             };
@@ -107,6 +110,36 @@ fn parse_chronicle(payload: &[u8]) -> Result<Vec<Entry>> {
         }
     }
     Ok(entries)
+}
+
+/// Maps the string id a runeword record stores to the runeword's row. Most runewords' string
+/// ids are `0x5000 + row`, but newer ones (Hysteria, Coven, ...) and Delirium's are not, so this
+/// matches the string's English text against the runeword names. Unknown ids come back unchanged.
+pub fn runeword_row(string_id: u32) -> u32 {
+    static ROWS: LazyLock<HashMap<u32, u32>> = LazyLock::new(|| {
+        #[derive(serde::Deserialize)]
+        struct Str<'a> {
+            id: u32,
+            #[serde(rename = "Key", borrow)]
+            key: &'a str,
+            #[serde(rename = "enUS", borrow)]
+            name: &'a str,
+        }
+        // D2R saves its string tables with a UTF-8 BOM, which serde_json rejects.
+        let json = ITEM_RUNES_JSON.trim_start_matches('\u{feff}');
+        let strings: Vec<Str> = serde_json::from_str(json).expect("bad data/item-runes.json");
+        let rows: HashMap<&str, u32> = items::catalog()
+            .iter()
+            .filter(|i| i.kind == Kind::Runeword)
+            .map(|i| (i.name, *i.rows.last().expect("runeword without a row")))
+            .collect();
+        strings
+            .iter()
+            .filter(|s| s.key.starts_with("Runeword"))
+            .filter_map(|s| Some((s.id, *rows.get(s.name)?)))
+            .collect()
+    });
+    ROWS.get(&string_id).copied().unwrap_or(string_id)
 }
 
 fn u16_at(b: &[u8], off: usize) -> u16 {
@@ -192,6 +225,38 @@ pub mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn maps_runeword_string_ids_to_rows() {
+        // Smoke follows the usual 0x5000 + row pattern; Coven (a Reign of the Warlock runeword)
+        // and Delirium don't.
+        assert_eq!(runeword_row(0x5099), 153);
+        assert_eq!(runeword_row(27650), 205);
+        assert_eq!(runeword_row(10910), 48);
+        let bytes = stash(&[], &[], &[(27650, 60)]);
+        assert_eq!(parse_stash(&bytes).unwrap()[0].row, 205);
+    }
+
+    #[test]
+    fn every_runeword_has_a_string_id() {
+        let mut ids: HashMap<u32, u32> = HashMap::new();
+        for id in 0..0x10000 {
+            let row = runeword_row(id);
+            if row != id {
+                ids.insert(row, id);
+            }
+        }
+        for item in crate::items::catalog()
+            .iter()
+            .filter(|i| i.kind == Kind::Runeword)
+        {
+            assert!(
+                item.rows.iter().any(|r| ids.contains_key(r)),
+                "no string id for {}",
+                item.name
+            );
+        }
     }
 
     #[test]
