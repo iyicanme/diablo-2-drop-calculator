@@ -406,14 +406,14 @@ mod tests {
             .unwrap();
         let entry = Entry {
             kind: Kind::Set,
-            row: blank.items[i].rows[0],
+            row: blank.items[i].row,
             found_at: 0,
         };
         let mut app = App::new(&[entry]);
         app.search = "tal rasha".into();
         let screen = render(&mut app);
         println!("{screen}");
-        assert!(screen.contains("All 648"));
+        assert!(screen.contains("All 636"));
         assert!(screen.contains("1/135 found, 134 left"));
         assert!(screen.contains("Tal Rasha's Wrappings (1/5)"));
         assert!(screen.contains("✓ Tal Rasha's Guardianship"));

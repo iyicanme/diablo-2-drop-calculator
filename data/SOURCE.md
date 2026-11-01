@@ -1,20 +1,15 @@
 # Data provenance
 
-The `.txt` and `.json` files in this directory are Diablo II: Resurrected's own game data
-(monster stats, treasure classes, item tables, level population, and string tables), sourced via
-the `silospen/DropCalc` GitHub repository's bundled `D2R_ROW_3.0` data snapshot.
+The `.txt` and `.json` files in this directory are Diablo II: Resurrected's own game data (excel
+tables and English string tables), extracted unchanged from a local D2R install by
+`tools/extract_d2r.py`. The `.tsv` files are generated from those same game files:
 
-This is used here strictly for a personal, non-commercial project and is not redistributed further.
-The Rust code in `src/` that reads and interprets this data is an independent reimplementation —
-it was designed by reading D2 community mechanics documentation and, for validating column meanings
-and algorithm details, the DropCalc source (which carries no explicit license) for understanding
-only, not by copying its code.
+- `chronicle_items.tsv` (the items the Chronicle tracks) by `tools/gen_chronicle_items.py`
+- `item_details.tsv` (chronicle_tracker's Details pane) by `tools/gen_item_details.py`
+- `area_monsters.tsv` (expected monsters of each kind per area clear) by `tools/gen_area_monsters.py`
 
-The display-only files used for the web app's hover cards — `monlvl.json`, `properties.json`,
-`skills.json`, `skilldesc.json`, `localestrings-eng.json` and `gems.json` — are the same D2R 3.0 game data,
-taken in JSON form from the `blizzhackers/d2data` GitHub repository (MIT-licensed tooling; the
-data itself remains Blizzard's). Same personal, non-commercial terms as above.
+See `tools/README.md` for how to refresh them after a game patch.
 
-`area_monsters.tsv` (expected monsters of each kind per area clear) is generated from a local D2R
-install's own tables by `tools/gen_area_monsters.py`; see `tools/README.md` and that script for the
-spawn rules it models and the assumptions it makes.
+The data itself is Blizzard's and is used here strictly for a personal, non-commercial project.
+The Rust code in `src/` that reads and interprets it is an independent implementation, designed
+from D2 community mechanics documentation.

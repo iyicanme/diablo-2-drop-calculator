@@ -79,7 +79,7 @@ impl App {
             .items
             .iter()
             .enumerate()
-            .flat_map(|(i, item)| item.rows.iter().map(move |&r| ((item.kind, r), i)))
+            .map(|(i, item)| ((item.kind, item.row), i))
             .collect();
         self.unknown.clear();
         for e in entries {
@@ -276,7 +276,7 @@ mod tests {
 
     fn row_of(app: &App, name: &str) -> (Kind, u32) {
         let item = app.items.iter().find(|i| i.name == name).unwrap();
-        (item.kind, item.rows[0])
+        (item.kind, item.row)
     }
 
     fn entry((kind, row): (Kind, u32), found_at: u32) -> Entry {
@@ -302,7 +302,7 @@ mod tests {
             },
         ]);
 
-        assert_eq!(app.progress(None), (2, 649));
+        assert_eq!(app.progress(None), (2, 637));
         assert_eq!(app.progress(Some(Kind::Runeword)), (1, 99));
         assert_eq!(app.unknown.len(), 1);
         let names = |app: &App| {
@@ -347,7 +347,7 @@ mod tests {
         assert_eq!(app.remaining(Some(Kind::Runeword)), 0);
         press(&mut app, &chars("t"));
         assert_eq!(app.tier, None);
-        assert_eq!(app.remaining(None), 649);
+        assert_eq!(app.remaining(None), 637);
     }
 
     #[test]
@@ -359,28 +359,17 @@ mod tests {
     }
 
     #[test]
-    fn duplicate_rows_count_once_with_earliest_date() {
+    fn duplicate_entries_count_once_with_earliest_date() {
         let blank = App::new(&[]);
         let item = blank
             .items
             .iter()
             .position(|i| i.name == "Azurewrath")
             .unwrap();
-        let rows = &blank.items[item].rows;
-        let app = App::new(&[
-            Entry {
-                kind: Kind::Unique,
-                row: rows[1],
-                found_at: 50,
-            },
-            Entry {
-                kind: Kind::Unique,
-                row: rows[0],
-                found_at: 90,
-            },
-        ]);
+        let row = row_of(&blank, "Azurewrath");
+        let app = App::new(&[entry(row, 90), entry(row, 50)]);
         assert_eq!(app.found[item], Some(50));
-        assert_eq!(app.progress(Some(Kind::Unique)), (1, 415));
+        assert_eq!(app.progress(Some(Kind::Unique)), (1, 403));
     }
 
     #[test]
@@ -414,9 +403,9 @@ mod tests {
         press(&mut app, &chars("3"));
         assert!(app.visible().is_empty());
         press(&mut app, &[KeyCode::Esc]);
-        assert_eq!(app.visible().len(), 415);
+        assert_eq!(app.visible().len(), 403);
         assert!(!app.quit);
         press(&mut app, &[KeyCode::End, KeyCode::Down]);
-        assert_eq!(app.row, 414);
+        assert_eq!(app.row, 402);
     }
 }

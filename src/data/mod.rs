@@ -35,13 +35,13 @@ const ITEM_NAMES_JSON: &str = include_str!("../../data/item-names.json");
 const ITEM_RUNES_JSON: &str = include_str!("../../data/item-runes.json");
 const LEVELS_JSON: &str = include_str!("../../data/levels.json");
 
-// Display-only data for the web app's hover cards (blizzhackers/d2data, see data/SOURCE.md).
-const MONLVL_JSON: &str = include_str!("../../data/monlvl.json");
-const PROPERTIES_JSON: &str = include_str!("../../data/properties.json");
+// Display-only data for the web app's hover cards.
+const MONLVL_TXT: &str = include_str!("../../data/monlvl.txt");
+const PROPERTIES_TXT: &str = include_str!("../../data/properties.txt");
+const SKILLS_TXT: &str = include_str!("../../data/skills.txt");
+const SKILLDESC_TXT: &str = include_str!("../../data/skilldesc.txt");
 const SKILLS_JSON: &str = include_str!("../../data/skills.json");
-const SKILLDESC_JSON: &str = include_str!("../../data/skilldesc.json");
-const LOCALESTRINGS_ENG_JSON: &str = include_str!("../../data/localestrings-eng.json");
-const GEMS_JSON: &str = include_str!("../../data/gems.json");
+const GEMS_TXT: &str = include_str!("../../data/gems.txt");
 
 pub struct GameData {
     pub monster_classes: HashMap<String, MonsterClass>,
@@ -54,7 +54,7 @@ pub struct GameData {
     pub area_spawns: AreaSpawns,
 }
 
-/// Per-level base life and experience (monlvl.json's expansion `L-` columns), which monstats.txt's
+/// Per-level base life and experience (monlvl.txt's expansion `L-` columns), which monstats.txt's
 /// HP/Exp percentages apply to. Indexed by monster level.
 pub struct MonsterLevelTable {
     pub hp: HashMap<Difficulty, Vec<i64>>,
@@ -63,18 +63,16 @@ pub struct MonsterLevelTable {
 
 impl MonsterLevelTable {
     pub fn load(data: &str) -> Self {
-        let rows: HashMap<String, serde_json::Value> =
-            serde_json::from_str(data.strip_prefix('\u{FEFF}').unwrap_or(data))
-                .expect("monlvl.json");
-        let mut by_level: Vec<(i64, &serde_json::Value)> = rows
-            .values()
-            .filter_map(|r| Some((r.get("Level")?.as_i64()?, r)))
+        let rows = raw::parse_tsv(data);
+        let mut by_level: Vec<(i64, &raw::Row)> = rows
+            .iter()
+            .filter_map(|r| Some((raw::get_i64(r, "Level")?, r)))
             .collect();
         by_level.sort_by_key(|(level, _)| *level);
         let column = |name: &str| -> Vec<i64> {
             by_level
                 .iter()
-                .map(|(_, r)| r.get(name).and_then(|v| v.as_i64()).unwrap_or(0))
+                .map(|(_, r)| raw::get_i64(r, name).unwrap_or(0))
                 .collect()
         };
         let mut hp = HashMap::new();
@@ -100,18 +98,16 @@ pub struct DisplayData {
     pub socket_bonuses: HashMap<String, Vec<(&'static str, Vec<items::RawProp>)>>,
 }
 
-/// gems.json: up to three `{slot}Mod{n}Code/Param/Min/Max` properties per socket slot.
+/// gems.txt: up to three `{slot}Mod{n}Code/Param/Min/Max` properties per socket slot.
 fn load_socket_bonuses(data: &str) -> HashMap<String, Vec<(&'static str, Vec<items::RawProp>)>> {
-    let gems: HashMap<String, serde_json::Value> =
-        serde_json::from_str(data.strip_prefix('\u{FEFF}').unwrap_or(data)).expect("gems.json");
-    let text = |v: Option<&serde_json::Value>| match v {
-        Some(serde_json::Value::String(s)) => s.clone(),
-        Some(serde_json::Value::Number(n)) => n.to_string(),
-        _ => String::new(),
-    };
-    gems.values()
+    raw::parse_tsv(data)
+        .iter()
         .filter_map(|g| {
-            let code = g.get("code")?.as_str()?.to_string();
+            let code = raw::get(g, "code").trim();
+            if code.is_empty() {
+                return None;
+            }
+            let text = |col: String| raw::get(g, &col).trim().to_string();
             let slots = [
                 ("weapon", "Weapons"),
                 ("helm", "Armor and helms"),
@@ -121,19 +117,19 @@ fn load_socket_bonuses(data: &str) -> HashMap<String, Vec<(&'static str, Vec<ite
             .map(|(key, label)| {
                 let props = (1..=3)
                     .filter_map(|n| {
-                        let prop = text(g.get(&format!("{key}Mod{n}Code")));
+                        let prop = text(format!("{key}Mod{n}Code"));
                         (!prop.is_empty()).then(|| items::RawProp {
                             code: prop,
-                            par: text(g.get(&format!("{key}Mod{n}Param"))),
-                            min: text(g.get(&format!("{key}Mod{n}Min"))),
-                            max: text(g.get(&format!("{key}Mod{n}Max"))),
+                            par: text(format!("{key}Mod{n}Param")),
+                            min: text(format!("{key}Mod{n}Min")),
+                            max: text(format!("{key}Mod{n}Max")),
                         })
                     })
                     .collect();
                 (label, props)
             })
             .collect();
-            Some((code, slots))
+            Some((code.to_string(), slots))
         })
         .collect()
 }
@@ -141,14 +137,14 @@ fn load_socket_bonuses(data: &str) -> HashMap<String, Vec<(&'static str, Vec<ite
 impl DisplayData {
     pub fn load() -> Self {
         DisplayData {
-            monster_levels: MonsterLevelTable::load(MONLVL_JSON),
+            monster_levels: MonsterLevelTable::load(MONLVL_TXT),
             props: props::PropRenderer::load(
-                PROPERTIES_JSON,
+                PROPERTIES_TXT,
+                SKILLS_TXT,
+                SKILLDESC_TXT,
                 SKILLS_JSON,
-                SKILLDESC_JSON,
-                LOCALESTRINGS_ENG_JSON,
             ),
-            socket_bonuses: load_socket_bonuses(GEMS_JSON),
+            socket_bonuses: load_socket_bonuses(GEMS_TXT),
         }
     }
 }

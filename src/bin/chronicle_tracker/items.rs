@@ -73,8 +73,8 @@ impl Tier {
 #[derive(Debug)]
 pub struct Item {
     pub kind: Kind,
-    /// Chronicle row ids of this item (a few items have several rows).
-    pub rows: Vec<u32>,
+    /// Chronicle row id of this item.
+    pub row: u32,
     pub name: &'static str,
     /// Base item name (empty for runewords).
     pub base: &'static str,
@@ -197,18 +197,10 @@ pub fn catalog() -> Vec<Item> {
             let mut f = l.split('\t');
             let mut next = || f.next().unwrap_or_default();
             let kind = Kind::parse(next()).unwrap_or_else(|| panic!("bad kind in line {l:?}"));
-            let rows: Vec<u32> = next()
-                .split(',')
-                .filter(|s| !s.is_empty())
-                .map(|s| s.parse().unwrap())
-                .collect();
-            // Items with several rows use the last one, the current version (Azurewrath's first
-            // row is an old, unspawnable one).
-            let details = rows
-                .iter()
-                .rev()
-                .find_map(|&r| details.remove(&(kind, r)))
-                .unwrap_or_default();
+            let row: u32 = next()
+                .parse()
+                .unwrap_or_else(|_| panic!("bad row in line {l:?}"));
+            let details = details.remove(&(kind, row)).unwrap_or_default();
             let (name, base, set) = (next(), next(), next());
             let tier = next();
             let tier = (!tier.is_empty())
@@ -224,7 +216,7 @@ pub fn catalog() -> Vec<Item> {
             });
             Item {
                 kind,
-                rows,
+                row,
                 name,
                 base,
                 set,
@@ -252,13 +244,10 @@ mod tests {
         let count = |k| items.iter().filter(|i| i.kind == k).count();
         assert_eq!(
             (count(Kind::Set), count(Kind::Unique), count(Kind::Runeword)),
-            (135, 415, 99)
+            (135, 403, 99)
         );
 
-        let mut rows: Vec<_> = items
-            .iter()
-            .flat_map(|i| i.rows.iter().map(|&r| (i.kind, r)))
-            .collect();
+        let mut rows: Vec<_> = items.iter().map(|i| (i.kind, i.row)).collect();
         let before = rows.len();
         rows.sort_unstable();
         rows.dedup();
@@ -296,7 +285,6 @@ mod tests {
                 .filter(|i| i.kind == Kind::Runeword)
                 .all(|i| !i.runes.is_empty())
         );
-        assert!(items.iter().all(|i| !i.rows.is_empty()));
         assert!(
             items
                 .iter()
@@ -304,7 +292,7 @@ mod tests {
                 .all(|i| i.qlvl.parse::<u16>().is_ok())
         );
         assert_eq!(get("Azurewrath").qlvl, "87");
-        assert_eq!(get("Horazon's Dominion").rows, [136]);
+        assert_eq!(get("Horazon's Dominion").row, 136);
         assert_eq!(get("Enigma").top_rune, Some(31));
         assert_eq!(get("Enigma").top_rune_label, "31 Jah");
         assert_eq!(get("Steel").top_rune_label, "3 Tir");

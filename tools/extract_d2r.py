@@ -33,6 +33,9 @@ TABLES = {  # header prefix -> file name
     'Name\tDef\tLevelId\t': 'lvlprest.txt',
     'uniquemod\tid\tenabled\t': 'monumod.txt',
     'Superunique\tName\tClass\t': 'superuniques.txt',
+    'Treasure Class\tgroup\tlevel\t': 'treasureclassex.txt',
+    'Function\tVersion\tUber\t': 'itemratio.txt',
+    'Level\tAC\tAC(N)\t': 'monlvl.txt',
 }
 STRINGS = {  # a key only that string file has -> file name
     'ModStr1a': 'item-modifiers.json',
@@ -40,6 +43,8 @@ STRINGS = {  # a key only that string file has -> file name
     'Runeword22': 'item-runes.json',
     'Eskillname0': 'skills.json',
     'Low Quality': 'item-nameaffixes.json',
+    'Izual': 'monsters.json',
+    'Moo Moo Farm': 'levels.json',
 }
 
 def blobs(path):

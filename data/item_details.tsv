@@ -198,12 +198,6 @@ unique	28	stat	Adds 3-5 cold damage
 unique	28	stat	+20 Defense
 unique	28	stat	+30 to Mana
 unique	28	stat	+3 to Light Radius
-unique	29	req	13
-unique	29	stat	+100% Enhanced Damage
-unique	29	stat	Adds 5-10 magic damage
-unique	29	stat	Adds 3-6 cold damage
-unique	29	stat	+50% Deadly Strike
-unique	29	stat	10% Better Chance of Getting Magic Items
 unique	30	req	17
 unique	30	stat	+10% Increased Attack Speed
 unique	30	stat	+[80-120]% Enhanced Damage
@@ -2769,24 +2763,6 @@ unique	400	stat	+[10-20] to all Attributes
 unique	400	stat	All Resistances +[10-20]
 unique	400	stat	+8 to Light Radius
 unique	400	stat	Level 30 Hydra (10/10 Charges)
-unique	401	req	75
-unique	401	stat	Monster Cold Immunity is Sundered
-unique	401	stat	Cold Resist [-90--70]%
-unique	402	req	75
-unique	402	stat	Monster Fire Immunity is Sundered
-unique	402	stat	Fire Resist [-90--70]%
-unique	403	req	75
-unique	403	stat	Monster Lightning Immunity is Sundered
-unique	403	stat	Lightning Resist [-90--70]%
-unique	404	req	75
-unique	404	stat	Monster Poison Immunity is Sundered
-unique	404	stat	Poison Resist [-90--70]%
-unique	405	req	75
-unique	405	stat	Monster Physical Immunity is Sundered
-unique	405	stat	Physical Damage Received Increased by [-20--10]%
-unique	406	req	75
-unique	406	stat	Monster Magic Immunity is Sundered
-unique	406	stat	Magic Resist [-65--45]%
 unique	408	req	80
 unique	408	stat	15% Chance to cast level 1 Terror when struck
 unique	408	stat	+2 to Chaos Skills (Warlock Only)
@@ -2941,14 +2917,6 @@ unique	425	stat	[15-35]% Better Chance of Getting Magic Items
 unique	426	req	75
 unique	426	stat	Monster Cold Immunity is Sundered
 unique	426	stat	Cold Resist [-90--70]%
-unique	427	req	75
-unique	427	stat	One of: +[5-10]% Faster Run/Walk / +[12-24]% Faster Hit Recovery / +[3-8] to all Attributes
-unique	427	stat	Monster Cold Immunity is Sundered
-unique	427	stat	One of: +[5-15]% to Cold Skill Damage / -[5-10]% to Enemy Cold Resistance
-unique	427	stat	One of: +[10-65] to Life / +[10-75] to Mana
-unique	427	stat	Cold Resist -70%
-unique	427	stat	One of: Magic Damage Reduced by [5-10] / Damage Reduced by [5-10]
-unique	427	stat	One of: [14-25]% Better Chance of Getting Magic Items / [20-55]% Extra Gold from Monsters
 unique	428	req	75
 unique	428	stat	Monster Fire Immunity is Sundered
 unique	428	stat	Fire Resist [-90--70]%
@@ -2964,46 +2932,6 @@ unique	431	stat	Physical Damage Received Increased by [-20--10]%
 unique	432	req	75
 unique	432	stat	Monster Magic Immunity is Sundered
 unique	432	stat	Magic Resist [-65--45]%
-unique	433	req	75
-unique	433	stat	One of: +[5-10]% Faster Run/Walk / +[12-24]% Faster Hit Recovery / +[3-8] to all Attributes
-unique	433	stat	Monster Fire Immunity is Sundered
-unique	433	stat	One of: +[5-15]% to Fire Skill Damage / -[5-10]% to Enemy Fire Resistance
-unique	433	stat	One of: +[10-65] to Life / +[10-75] to Mana
-unique	433	stat	Fire Resist -70%
-unique	433	stat	One of: Magic Damage Reduced by [5-10] / Damage Reduced by [5-10]
-unique	433	stat	One of: [14-25]% Better Chance of Getting Magic Items / [20-55]% Extra Gold from Monsters
-unique	434	req	75
-unique	434	stat	One of: +[5-10]% Faster Run/Walk / +[12-24]% Faster Hit Recovery / +[3-8] to all Attributes
-unique	434	stat	Monster Lightning Immunity is Sundered
-unique	434	stat	One of: +[5-15]% to Lightning Skill Damage / -[5-10]% to Enemy Lightning Resistance
-unique	434	stat	One of: +[10-65] to Life / +[10-75] to Mana
-unique	434	stat	Lightning Resist -70%
-unique	434	stat	One of: Magic Damage Reduced by [5-10] / Damage Reduced by [5-10]
-unique	434	stat	One of: [14-25]% Better Chance of Getting Magic Items / [20-55]% Extra Gold from Monsters
-unique	435	req	75
-unique	435	stat	One of: +[5-10]% Faster Run/Walk / +[12-24]% Faster Hit Recovery / +[3-8] to all Attributes
-unique	435	stat	Monster Poison Immunity is Sundered
-unique	435	stat	One of: +[5-15]% to Poison Skill Damage / -[5-10]% to Enemy Poison Resistance
-unique	435	stat	One of: +[10-65] to Life / +[10-75] to Mana
-unique	435	stat	Poison Resist -70%
-unique	435	stat	One of: Magic Damage Reduced by [5-10] / Damage Reduced by [5-10]
-unique	435	stat	One of: [14-25]% Better Chance of Getting Magic Items / [20-55]% Extra Gold from Monsters
-unique	436	req	75
-unique	436	stat	One of: +[5-10]% Faster Run/Walk / +[12-24]% Faster Hit Recovery / +[3-8] to all Attributes
-unique	436	stat	One of: +[75-100]% Enhanced Damage / -[5-10]% to Enemy Physical Damage Resistance
-unique	436	stat	Monster Physical Immunity is Sundered
-unique	436	stat	One of: +[10-65] to Life / +[10-75] to Mana
-unique	436	stat	One of: Magic Damage Reduced by [5-10] / Damage Reduced by [5-10]
-unique	436	stat	Physical Damage Received Increased by -10%
-unique	436	stat	One of: [14-25]% Better Chance of Getting Magic Items / [20-55]% Extra Gold from Monsters
-unique	437	req	75
-unique	437	stat	One of: +[5-10]% Faster Run/Walk / +[12-24]% Faster Hit Recovery / +[3-8] to all Attributes
-unique	437	stat	Monster Magic Immunity is Sundered
-unique	437	stat	One of: +[10-15]% to Magic Skill Damage / -[5-10]% to Enemy Magic Resistance
-unique	437	stat	One of: +[10-65] to Life / +[10-75] to Mana
-unique	437	stat	Magic Resist -45%
-unique	437	stat	One of: Magic Damage Reduced by [5-10] / Damage Reduced by [5-10]
-unique	437	stat	One of: [14-25]% Better Chance of Getting Magic Items / [20-55]% Extra Gold from Monsters
 set	0	req	9
 set	0	stat	15% Increased Chance of Blocking
 set	0	stat	+15 Defense

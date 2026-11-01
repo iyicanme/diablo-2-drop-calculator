@@ -1,12 +1,13 @@
 //! Turns unique/set item property codes (`allskills 2`, `hit-skill 45 10/10`, ...) into readable
 //! lines for the web app's hover card.
 //!
-//! Wording comes from properties.json's `*Tooltip` templates (a designer column, close to but not
+//! Wording comes from properties.txt's `*Tooltip` templates (a designer column, close to but not
 //! always identical to the in-game text): each `#` is filled from `min`/`max`/`par`, interpreted
 //! per the property's `func1` the same way the file's own `*Min`/`*Max`/`*Parameter` notes describe.
 
 use super::items::RawProp;
-use serde_json::Value;
+use super::raw::{Row, get, get_i64, parse_tsv};
+use super::strings::load_string_table;
 use std::collections::HashMap;
 
 const CLASS_NAMES: [(&str, &str); 8] = [
@@ -20,7 +21,7 @@ const CLASS_NAMES: [(&str, &str); 8] = [
     ("war", "Warlock"),
 ];
 
-/// `skilltab` parameter -> tab name; three tabs per class in CLASS_NAMES order (properties.json's
+/// `skilltab` parameter -> tab name; three tabs per class in CLASS_NAMES order (properties.txt's
 /// notes: Amazon = 0-2, Sorceress = 3-5, ... Assassin = 18-20).
 const SKILL_TABS: [&str; 21] = [
     "Bow and Crossbow Skills",
@@ -60,8 +61,9 @@ pub struct PropRenderer {
     skill_ids_by_name: HashMap<String, i64>,
 }
 
-fn strip_bom(data: &str) -> &str {
-    data.strip_prefix('\u{FEFF}').unwrap_or(data)
+/// A trimmed, non-empty cell.
+fn field<'a>(row: &'a Row, col: &str) -> Option<&'a str> {
+    Some(get(row, col).trim()).filter(|s| !s.is_empty())
 }
 
 fn int(s: &str) -> Option<i64> {
@@ -86,57 +88,46 @@ fn decimal(v: f64) -> String {
 }
 
 impl PropRenderer {
+    /// From properties.txt, skills.txt, skilldesc.txt and the skills.json string table.
     pub fn load(
-        properties_json: &str,
-        skills_json: &str,
-        skilldesc_json: &str,
+        properties_txt: &str,
+        skills_txt: &str,
+        skilldesc_txt: &str,
         strings_json: &str,
     ) -> Self {
-        let properties: HashMap<String, Value> =
-            serde_json::from_str(strip_bom(properties_json)).expect("properties.json");
-        let skills: HashMap<String, Value> =
-            serde_json::from_str(strip_bom(skills_json)).expect("skills.json");
-        let skilldesc: HashMap<String, Value> =
-            serde_json::from_str(strip_bom(skilldesc_json)).expect("skilldesc.json");
-        let strings: HashMap<String, String> =
-            serde_json::from_str(strip_bom(strings_json)).expect("localestrings-eng.json");
+        let properties = parse_tsv(properties_txt);
+        let skills = parse_tsv(skills_txt);
+        let skilldesc = parse_tsv(skilldesc_txt);
+        let strings = load_string_table(strings_json);
 
         let templates = properties
-            .values()
+            .iter()
             .filter_map(|p| {
-                let code = p.get("code")?.as_str()?;
-                let tooltip = p.get("*Tooltip")?.as_str()?;
+                let code = field(p, "code")?;
+                let tooltip = field(p, "*Tooltip")?;
                 Some((
                     code.to_string(),
-                    (
-                        p.get("func1").and_then(Value::as_i64).unwrap_or(1),
-                        tooltip.to_string(),
-                    ),
+                    (get_i64(p, "func1").unwrap_or(1), tooltip.to_string()),
                 ))
             })
             .collect();
 
         let name_key_by_desc: HashMap<&str, &str> = skilldesc
-            .values()
-            .filter_map(|d| Some((d.get("skilldesc")?.as_str()?, d.get("str name")?.as_str()?)))
+            .iter()
+            .filter_map(|d| Some((field(d, "skilldesc")?, field(d, "str name")?)))
             .collect();
         let mut skills_by_id = HashMap::new();
         let mut skill_ids_by_name = HashMap::new();
-        for s in skills.values() {
-            let (Some(id), Some(raw)) = (
-                s.get("*Id").and_then(Value::as_i64),
-                s.get("skill").and_then(Value::as_str),
-            ) else {
+        for s in &skills {
+            let (Some(id), Some(raw)) = (get_i64(s, "*Id"), field(s, "skill")) else {
                 continue;
             };
-            let name = s
-                .get("skilldesc")
-                .and_then(Value::as_str)
+            let name = field(s, "skilldesc")
                 .and_then(|d| name_key_by_desc.get(d))
                 .and_then(|k| strings.get(*k))
                 .cloned()
                 .unwrap_or_else(|| raw.to_string());
-            let class = s.get("charclass").and_then(Value::as_str).and_then(|c| {
+            let class = field(s, "charclass").and_then(|c| {
                 CLASS_NAMES
                     .iter()
                     .find(|(code, _)| *code == c)

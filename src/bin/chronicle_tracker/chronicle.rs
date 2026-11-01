@@ -131,7 +131,7 @@ pub fn runeword_row(string_id: u32) -> u32 {
         let rows: HashMap<&str, u32> = items::catalog()
             .iter()
             .filter(|i| i.kind == Kind::Runeword)
-            .map(|i| (i.name, *i.rows.last().expect("runeword without a row")))
+            .map(|i| (i.name, i.row))
             .collect();
         strings
             .iter()
@@ -252,7 +252,7 @@ pub mod tests {
             .filter(|i| i.kind == Kind::Runeword)
         {
             assert!(
-                item.rows.iter().any(|r| ids.contains_key(r)),
+                ids.contains_key(&item.row),
                 "no string id for {}",
                 item.name
             );
